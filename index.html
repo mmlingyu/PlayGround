@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧱</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>词汇世界 Word World | 答题建造 Qiáo-dá Jiànzào</title>
+<style>
+:root{--bg:#87CEEB;--panel:rgba(20,28,38,.92);--accent:#FFC93C;--green:#5FBC3F;--btn:#2ECC71}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,"PingFang SC","Microsoft YaHei",Arial,sans-serif;background:var(--bg);user-select:none;-webkit-user-select:none}
+#game{position:fixed;inset:0}
+#game canvas{display:block}
+#topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));z-index:20;pointer-events:none}
+.pill{pointer-events:auto;background:var(--panel);color:#fff;border-radius:14px;padding:6px 12px;font-size:14px;display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.18);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.pill b{color:var(--accent);font-size:16px}
+#title-pill{font-weight:800}
+#title-pill small{font-weight:400;opacity:.8;font-size:11px;display:block;line-height:1.1}
+.iconbtn{pointer-events:auto;width:44px;height:44px;border-radius:13px;border:1px solid rgba(255,255,255,.25);background:var(--panel);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#hotbar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(10px,env(safe-area-inset-bottom));display:flex;gap:6px;z-index:20;background:rgba(15,22,30,.85);padding:8px;border-radius:16px;border:1px solid rgba(255,255,255,.15);max-width:96vw;overflow-x:auto}
+.slot{min-width:62px;width:62px;height:68px;border-radius:12px;background:rgba(255,255,255,.08);border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;cursor:pointer;position:relative;flex-shrink:0}
+.slot.sel{border-color:var(--accent);background:rgba(255,201,60,.18)}
+.slot .emoji{font-size:24px;line-height:1}
+.slot .swatch{width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,.4);margin-bottom:2px}
+.slot .nm{font-size:11px;font-weight:700;line-height:1}
+.slot .py{font-size:9px;opacity:.65;line-height:1}
+.slot .ct{position:absolute;top:2px;right:6px;font-size:11px;font-weight:800;color:var(--accent)}
+#sidebtns{position:fixed;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:20}
+.bigbtn{width:64px;min-height:64px;border-radius:18px;border:2px solid rgba(255,255,255,.3);background:var(--panel);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);padding:6px 2px}
+.bigbtn:active{transform:scale(.93)}
+.bigbtn .e{font-size:24px}
+.bigbtn .t{font-size:12px;font-weight:800}
+.bigbtn .p{font-size:9px;opacity:.6}
+.bigbtn.mode-build{background:linear-gradient(135deg,#2ECC71,#27AE60);border-color:#fff}
+.bigbtn.mode-dig{background:linear-gradient(135deg,#E67E22,#D35400);border-color:#fff}
+#joystick{position:fixed;left:14px;bottom:96px;width:124px;height:124px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.35);z-index:20;touch-action:none}
+#stick{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.85);transform:translate(-50%,-50%);box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:22px;display:flex;align-items:center;justify-content:center}
+#jumpBtn{position:fixed;right:86px;bottom:100px;width:72px;height:72px;border-radius:50%;background:rgba(46,204,113,.92);border:3px solid #fff;color:#fff;font-weight:900;z-index:20;font-size:14px}
+#jumpBtn:active{transform:scale(.92)}
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5)}
+.modal.open{display:flex}
+.sheet{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;background:#F7F3E8;border-radius:22px 22px 0 0;padding:16px 16px 30px;animation:up .25s ease}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheet h2{margin:4px 0;font-size:20px}
+.sheet .pyline{color:#7A6A53;font-size:13px}
+.sheet .enline{color:#2C7FB8;font-size:13px;font-weight:700}
+.qcard{background:#fff;border-radius:16px;padding:14px;margin:10px 0;border:2px solid #EAD9A8}
+.qcard .q{font-size:22px;font-weight:900;text-align:center}
+.qcard .qpy{text-align:center;color:#888;font-size:14px}
+.qcard .qen{text-align:center;color:#2C7FB8;font-size:14px}
+.opt{display:block;width:100%;margin:8px 0;padding:12px;border-radius:14px;border:2px solid #DDD;background:#fff;font-size:17px;font-weight:700;cursor:pointer}
+.opt:active{transform:scale(.98)}
+.opt.correct{border-color:#2ECC71;background:#DFF7E6}
+.opt.wrong{border-color:#E74C3C;background:#FDE3E0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.card{background:#fff;border-radius:14px;padding:10px;margin:8px 0;border:1px solid #E5D9BC;display:flex;align-items:center;gap:10px}
+.card .grow{flex:1}
+.mbtn{background:#2ECC71;color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:900;font-size:14px;cursor:pointer}
+.mbtn:disabled{background:#BBB}
+.mbtn.buy{background:#E67E22}
+.mbtn.ghost{background:#fff;color:#333;border:2px solid #CCC}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:99;background:rgba(0,0,0,.85);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;font-weight:700;display:none;max-width:92vw;text-align:center}
+#help{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px}
+#help .inner{background:#FFFDF4;border-radius:20px;max-width:520px;width:100%;padding:20px;max-height:90vh;overflow-y:auto}
+.kbd{background:#eee;border-radius:6px;padding:1px 7px;border:1px solid #ccc;font-size:12px}
+.streak{color:#E67E22;font-weight:900}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sw{width:38px;height:38px;border-radius:50%;border:3px solid #ddd;cursor:pointer}
+.sw.sel{border-color:#222;transform:scale(1.1)}
+.txtin{width:100%;margin-top:6px;padding:10px 12px;border-radius:12px;border:2px solid #D9CBA6;font-size:16px;font-weight:700;background:#fff;color:#222}
+.chatlog{max-height:120px;overflow-y:auto;margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.chatmsg{background:#fff;border-radius:12px;padding:8px 10px;font-size:14px;border:1px solid #E5D9BC}
+.chatbtn{background:#fff;border:2px solid #A29BFE;border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer}
+.peerchip{display:inline-block;background:#DFE6E9;border-radius:10px;padding:2px 8px;margin:2px;font-size:12px;font-weight:700}
+@media (min-width:760px){.sheet{border-radius:20px;margin-bottom:20px}#joystick{bottom:120px}#sidebtns{right:16px}.slot{min-width:70px;width:70px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body>
+<div id="game"></div>
+<div id="topbar">
+  <div class="pill" id="title-pill">🧱 词汇世界 <small>cíhuì shìjiè · Word World</small></div>
+  <div class="pill">⭐ <b id="stars">5</b> <span style="font-size:11px">xīngxing<br>stars</span></div>
+  <div class="pill">🔥 <b id="streak">0</b></div>
+  <div class="pill" id="coords-pill">📍 <b id="coords" style="font-size:13px">0,0</b></div>
+  <div class="pill" id="net-pill">👥 <b id="peerCount">0</b><span style="font-size:11px">在线<br>online</span></div>
+  <div class="pill" style="background:rgba(46,204,113,.92);border-color:#fff">∞ 平地 píngdì·Infinite</div>
+  <div style="flex:1"></div>
+  <button class="iconbtn" id="btnHelp" title="帮助 Help">❓</button>
+  <button class="iconbtn" id="btnSound" title="声音 Sound">🔊</button>
+  <button class="iconbtn" id="btnSave" title="保存 Save">💾</button>
+</div>
+<div id="sidebtns">
+  <button class="bigbtn mode-dig" id="btnMode"><span class="e">⛏️</span><span class="t" id="modeTxt">挖掉</span><span class="p">wā diào·Dig</span></button>
+  <button class="bigbtn" id="btnQuiz" style="background:linear-gradient(135deg,#9B59B6,#8E44AD)"><span class="e">📝</span><span class="t">答题</span><span class="p">dá tí·Quiz</span></button>
+  <button class="bigbtn" id="btnBag"><span class="e">🎒</span><span class="t">背包</span><span class="p">bèibāo·Bag</span></button>
+  <button class="bigbtn" id="btnCraft"><span class="e">⚒️</span><span class="t">合成</span><span class="p">héchéng·Craft</span></button>
+  <button class="bigbtn" id="btnShop"><span class="e">🛒</span><span class="t">兑换</span><span class="p">duìhuàn·Shop</span></button>
+  <button class="bigbtn" id="btnLook"><span class="e">🎨</span><span class="t">角色</span><span class="p">juésè·Me</span></button>
+  <button class="bigbtn" id="btnNet" style="background:linear-gradient(135deg,#0984e3,#6c5ce7)"><span class="e">🌐</span><span class="t">联机</span><span class="p">liánjī·Online</span></button>
+</div>
+<button id="jumpBtn">跳<br><small style="font-weight:400">tiào·Jump</small></button>
+<div id="joystick"><div id="stick">🕹️</div></div>
+<div id="hotbar"></div>
+<div id="toast"></div>
+
+<div class="modal" id="mQuiz"><div class="sheet">
+  <h2>📝 答题得方块 <span class="streak" id="qStreak"></span></h2>
+  <div class="pyline">dá tí dé fāng kuài — answer correctly, collect blocks to backpack</div>
+  <div class="enline">Answer correctly → blocks go to 🎒 bèibāo backpack</div>
+  <div class="qcard"><div class="q" id="qText">…</div><div class="qpy" id="qPy"></div><div class="qen" id="qEn"></div>
+  <div class="row" style="justify-content:center;margin-top:8px"><button class="mbtn ghost" id="qSpeak">🔊 朗读 dú·Speak</button><button class="mbtn ghost" id="qNext">⏭ 下一题 xià yí tí·Next</button></div></div>
+  <div id="qOpts"></div>
+  <div id="qReward" style="text-align:center;font-weight:800;color:#27AE60;min-height:24px"></div>
+  <div class="row"><button class="mbtn ghost" id="qClose" style="flex:1">✖ 关闭 guānbì·Close</button></div>
+</div></div>
+
+<div class="modal" id="mBag"><div class="sheet">
+  <h2>🎒 背包 <span style="font-weight:400;font-size:14px">bèibāo · Backpack</span></h2>
+  <div class="pyline">diǎn jī xuǎn zé fāng kuài，rán hòu diǎn shì jiè fàng zhì — tap a block, then tap world to place</div>
+  <div id="bagList"></div>
+  <h3>🛠️ 工具 gōngjù · Tools</h3><div id="toolList"></div>
+  <div class="row"><button class="mbtn ghost" id="bagClose" style="flex:1">✖ 关闭 Close</button></div>
+</div></div>
+
+<div class="modal" id="mCraft"><div class="sheet">
+  <h2>⚒️ 合成 <span style="font-weight:400;font-size:14px">héchéng · Craft</span></h2>
+  <div class="pyline">yòng dī jí fāng kuài hé chéng gāo jí cái liào — combine basic blocks into better ones</div>
+  <div id="craftList"></div>
+  <div class="row"><button class="mbtn ghost" id="craftClose" style="flex:1">✖ 关闭 Close</button></div>
+</div></div>
+
+<div class="modal" id="mShop"><div class="sheet">
+  <h2>🛒 兑换 <span style="font-weight:400;font-size:14px">duìhuàn · Shop</span></h2>
+  <div class="pyline">yòng ⭐ xīngxing duì huàn gōng jù — trade stars earned from quizzes for tools</div>
+  <div id="shopList"></div>
+  <div class="row"><button class="mbtn ghost" id="shopClose" style="flex:1">✖ 关闭 Close</button></div>
+</div></div>
+
+<div class="modal" id="mLook"><div class="sheet">
+  <h2>🎨 我的角色 <span style="font-weight:400;font-size:14px">wǒ de juésè · My avatar</span></h2>
+  <div class="pyline">dǎban zìjǐ，liánjī shí péngyou yě kàn得见 — dress up, friends see it online too</div>
+  <div class="card"><div class="grow"><b>名字 míngzi · Name</b><br><input class="txtin" id="lookName" maxlength="10" placeholder="如：小建筑师"></div></div>
+  <div class="card"><div class="grow"><b>肤色 fūsè · Skin</b><div class="swatches" id="swSkin"></div></div></div>
+  <div class="card"><div class="grow"><b>衣服 yīfu · Shirt</b><div class="swatches" id="swShirt"></div></div></div>
+  <div class="card"><div class="grow"><b>裤子 kùzi · Pants</b><div class="swatches" id="swPants"></div></div></div>
+  <div class="card"><div class="grow"><b>帽子 màozi · Hat</b><div class="row" id="hatRow"></div></div></div>
+  <div class="row"><button class="mbtn ghost" id="lookClose" style="flex:1">✖ 关闭 Close</button></div>
+</div></div>
+
+<div class="modal" id="mNet"><div class="sheet">
+  <h2>🌐 联机 <span style="font-weight:400;font-size:14px">liánjī · Play together</span></h2>
+  <div class="pyline">hé péngyou shūrù tóngyíge fángjiān háo — type the SAME room code with friends, no account needed</div>
+  <div class="card"><div class="grow"><b>房间号 fángjiān hào · Room code</b><br><input class="txtin" id="netRoom" maxlength="16" placeholder="如：sanban"></div><button class="mbtn" id="netJoin">进入 Join</button></div>
+  <div class="card"><div class="grow"><b>状态 zhuàngtài · Status</b><br><small id="netStatus">未连接 wèi liánjiē · offline（单人模式正常玩）</small><br><small>在线 zàixiàn · Online: <b id="netPeerList"></b></small></div><button class="mbtn ghost" id="netLeave">离开 Leave</button></div>
+  <h3>💬 快聊 kuài liáo · Quick chat</h3>
+  <div class="row" id="chatRow"></div>
+  <div class="chatlog" id="chatLog"></div>
+  <div class="row"><button class="mbtn ghost" id="netClose" style="flex:1">✖ 关闭 Close</button></div>
+</div></div>
+
+<div id="help"><div class="inner">
+  <h2 style="margin:0">🧱 词汇世界 cíhuì shìjiè · Word World</h2>
+  <p><b>英语 + 汉字拼音版我的世界</b> · English + Chinese & Pinyin Minecraft</p>
+  <ol style="line-height:1.7;font-size:15px">
+    <li>📝 <b>答题 dá tí</b> → 答对收集方块到 <b>背包 bèibāo</b>，还得 ⭐ 星星 xīngxing</li>
+    <li>🎒 点背包选方块，再点世界 <b>放置 fàngzhì / Place</b>；⛏️ 切换 <b>挖掉 wā diào / Dig</b> 敲掉方块也会回收</li>
+    <li>⚒️ <b>合成 héchéng</b>：低级变高级（泥土→石头，木头→木板…）</li>
+    <li>🛒 <b>兑换 duìhuàn</b>：星星换铲子/镐子/锤子，挖更快、锤子一次铺3×3！</li>
+    <li>🕹️ 左摇杆走路，右半屏拖动转视角，双指缩放；<span class="kbd">WASD</span> + <span class="kbd">Space</span> 也可在电脑玩</li>
+      <li>🌍 <b>无限平地 wúxiàn píngdì · Infinite flat world</b>：一直走，世界一直长出来，没有边界！</li>
+      <li>🎨 <b>角色 juésè</b>：换名字、肤色、衣服、帽子，做独一无二的自己</li>
+      <li>🌐 <b>联机 liánjī</b>：和朋友输入<b>同一个房间号</b>，就能互相看见、一起盖房子、发快聊（P2P直连，不用注册）</li>
+  </ol>
+  <button class="mbtn" id="startPlay" style="width:100%;font-size:18px;padding:14px">▶ 开始建造 kāi shǐ · Play！</button>
+  <p style="font-size:12px;color:#888;text-align:center">进度自动保存在本机 · progress auto-saves locally 💾</p>
+</div></div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- DATA ----------
+const BLOCKS = {
+  grass:{zh:'草地',py:'cǎodì',en:'Grass',c:0x5FBC3F,e:'🟩'},
+  dirt:{zh:'泥土',py:'nítǔ',en:'Dirt',c:0x8B5E34,e:'🟫'},
+  wood:{zh:'木头',py:'mùtou',en:'Wood',c:0x7A4A21,e:'🪵'},
+  plank:{zh:'木板',py:'mùbǎn',en:'Plank',c:0xC89A5B,e:'🪟'},
+  stone:{zh:'石头',py:'shítou',en:'Stone',c:0x9AA0A6,e:'⬜'},
+  brick:{zh:'砖块',py:'zhuānkuài',en:'Brick',c:0xC65D3B,e:'🧱'},
+  glass:{zh:'玻璃',py:'bōli',en:'Glass',c:0xBFEAFF,e:'🪞',t:true},
+  leaves:{zh:'树叶',py:'shùyè',en:'Leaves',c:0x3E9B2F,e:'🌿'},
+  sand:{zh:'沙子',py:'shāzi',en:'Sand',c:0xE3D49A,e:'🟨'},
+  lamp:{zh:'灯',py:'dēng',en:'Lamp',c:0xFFD54F,e:'💡',glow:true},
+};
+const HOTBAR = ['grass','dirt','wood','plank','stone','brick','glass','lamp'];
+const RECIPES = [
+  {out:'stone',n:1,need:{dirt:4},zh:'4泥土→1石头',py:'nítǔ → shítou',en:'4 Dirt → 1 Stone'},
+  {out:'plank',n:4,need:{wood:2},zh:'2木头→4木板',py:'mùtou → mùbǎn',en:'2 Wood → 4 Plank'},
+  {out:'brick',n:2,need:{stone:2,wood:1},zh:'2石头+1木头→2砖块',py:'shítou+mùtou → zhuānkuài',en:'2 Stone+1 Wood → 2 Brick'},
+  {out:'glass',n:2,need:{sand:4},zh:'4沙子→2玻璃',py:'shāzi → bōli',en:'4 Sand → 2 Glass'},
+  {out:'lamp',n:1,need:{plank:2,glass:1},zh:'2木板+1玻璃→1灯',py:'mùbǎn+bōli → dēng',en:'2 Plank+1 Glass → 1 Lamp'},
+];
+const TOOLS = {
+  hand:{zh:'手',py:'shǒu',en:'Hand',e:'✋',price:0,desc:'普通 pǔtōng · normal'},
+  shovel:{zh:'铲子',py:'chǎnzi',en:'Shovel',e:'🥄',price:10,desc:'走路更快+挖土双倍 zǒu kuài · fast'},
+  pick:{zh:'镐子',py:'gǎozi',en:'Pickaxe',e:'⛏️',price:20,desc:'敲石头双倍掉落 shuāngbèi · double drops'},
+  hammer:{zh:'锤子',py:'chuízi',en:'Hammer',e:'🔨',price:30,desc:'一次铺3×3 yícì 3×3 · build 3x3'},
+};
+const WORDS = [
+  ['apple','苹果','píngguǒ'],['banana','香蕉','xiāngjiāo'],['dog','狗','gǒu'],['cat','猫','māo'],
+  ['bird','鸟','niǎo'],['fish','鱼','yú'],['tree','树','shù'],['flower','花','huā'],
+  ['water','水','shuǐ'],['sun','太阳','tàiyáng'],['moon','月亮','yuèliang'],['star','星星','xīngxing'],
+  ['red','红色','hóngsè'],['blue','蓝色','lánsè'],['green','绿色','lǜsè'],['book','书','shū'],
+  ['school','学校','xuéxiào'],['friend','朋友','péngyou'],['house','房子','fángzi'],['door','门','mén'],
+  ['rice','米饭','mǐfàn'],['milk','牛奶','niúnǎi'],['egg','鸡蛋','jīdàn'],['mountain','山','shān'],
+  ['river','河','hé'],['rain','雨','yǔ'],['snow','雪','xuě'],['hand','手','shǒu'],
+  ['eye','眼睛','yǎnjing'],['happy','快乐','kuàilè'],['big','大','dà'],['small','小','xiǎo'],
+  ['pig','猪','zhū'],['duck','鸭子','yāzi'],['tiger','老虎','lǎohǔ'],['panda','熊猫','xióngmāo'],
+];
+let S = {inv:{grass:12,dirt:16,wood:8,plank:4,stone:6,brick:2,glass:2,sand:6,leaves:4,lamp:1},stars:5,streak:0,tools:['hand'],tool:'hand',mode:'dig',sel:'grass',look:{name:'小建筑师',skin:'#FFD9B3',shirt:'#E74C3C',pants:'#2C3E50',hat:'cap'}};
+
+// ---------- SAVE (infinite world: cap entries to protect localStorage) ----------
+function save(){try{const entries=[...world.entries()];entries.sort((a,b)=>{const pa=a[0].split(',').map(Number),pb=b[0].split(',').map(Number);const da=Math.max(Math.abs(pa[0]-px),Math.abs(pa[2]-pz)),db=Math.max(Math.abs(pb[0]-px),Math.abs(pb[2]-pz));return da-db;});const slim=entries.slice(0,9000).map(([k,v])=>k+':'+v);localStorage.setItem('wordworld_v2',JSON.stringify({inv:S.inv,stars:S.stars,tools:S.tools,tool:S.tool,look:S.look,world:slim,px,pz}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem('wordworld_v2')||localStorage.getItem('wordworld_v1'));if(d){S.inv=Object.assign({},S.inv,(d.inv||{}));S.stars=d.stars||0;if(d.tools&&d.tools.length)S.tools=d.tools;if(d.tool)S.tool=d.tool;if(d.look)S.look=Object.assign({},S.look,d.look);if(typeof d.px==='number'){window._sx=d.px;window._sz=d.pz;}return d.world||null;}}catch(e){}return null;}
+
+// ---------- THREE SETUP ----------
+const container=document.getElementById('game');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x87CEEB);scene.fog=new THREE.Fog(0x87CEEB,40,110);
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+container.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x668866,0.95));
+const sun=new THREE.DirectionalLight(0xffffff,1.1);sun.position.set(20,30,10);scene.add(sun);
+// --- Infinite flat world 无限平地: default pingdi, streams around player ---
+const FLAT_Y=0,VIEW_R=38,UNLOAD_R=54;
+const world=new Map();const meshes=new Map();const genCols=new Set();
+const geo=new THREE.BoxGeometry(1,1,1);
+const mats={};for(const k in BLOCKS){const b=BLOCKS[k];mats[k]=new THREE.MeshLambertMaterial({color:b.c,transparent:!!b.t,opacity:b.t?0.55:1,emissive:b.glow?0x7a5c00:0x000000});}
+function key(x,y,z){return x+','+y+','+z}
+function spawnMesh(k,t){if(meshes.has(k)||!world.has(k))return;const p=k.split(',').map(Number);const m=new THREE.Mesh(geo,mats[t]);m.position.set(p[0],p[1],p[2]);m.userData.k=k;scene.add(m);meshes.set(k,m);}
+function addBlock(x,y,z,t){const k=key(x,y,z);if(world.has(k))return;world.set(k,t);genCols.add(x+','+z);spawnMesh(k,t);}
+function removeBlock(k){const m=meshes.get(k);if(m){scene.remove(m);}meshes.delete(k);world.delete(k);const c=k.split(',').map(Number);if(c[1]<=0&&c[1]>-3){const bk=key(c[0],c[1]-1,c[2]);if(world.has(bk)&&!meshes.has(bk))spawnMesh(bk,world.get(bk));}}
+function topY(x,z){const xi=Math.round(x),zi=Math.round(z);if(!genCols.has(xi+','+zi))return FLAT_Y;for(let y=14;y>=-2;y--){if(world.has(key(xi,y,zi)))return y;}return -3;}
+function hash2(x,z){let h=(x*374761393+z*668265263)|0;h=(h^(h>>>13))|0;h=(h*1274126177)|0;return ((h^(h>>>16))>>>0);}
+function ensureColumn(x,z){
+  const ck=x+','+z;if(genCols.has(ck))return;genCols.add(ck);
+  if(!world.has(key(x,-2,z)))world.set(key(x,-2,z),'stone');
+  if(!world.has(key(x,-1,z)))world.set(key(x,-1,z),'dirt');
+  if(!world.has(key(x,0,z)))world.set(key(x,0,z),'grass');
+  spawnMesh(key(x,0,z),'grass');
+  if(Math.hypot(x,z)>8&&hash2(x,z)%130===0){
+    const parts=[[x,1,z,'wood'],[x,2,z,'wood'],[x,3,z,'leaves'],[x+1,3,z,'leaves'],[x-1,3,z,'leaves'],[x,3,z+1,'leaves'],[x,3,z-1,'leaves'],[x,4,z,'leaves']];
+    for(const q of parts){const k=key(q[0],q[1],q[2]);if(!world.has(k)){world.set(k,q[3]);genCols.add(q[0]+','+q[2]);spawnMesh(k,q[3]);}}
+  }
+}
+function streamWorld(force){
+  const cx=Math.round(px),cz=Math.round(pz);let built=0;const R=VIEW_R;const lim=force?9000:500;
+  for(let dx=-R;dx<=R;dx++)for(let dz=-R;dz<=R;dz++){
+    if(dx*dx+dz*dz>R*R)continue;
+    const x=cx+dx,z=cz+dz;
+    if(!genCols.has(x+','+z)){ensureColumn(x,z);if(++built>lim)return;}
+    else{const ty=topY(x,z);const k=key(x,ty,z);if(world.has(k)&&!meshes.has(k)){spawnMesh(k,world.get(k));if(++built>lim)return;}}
+  }
+}
+function unloadFar(){
+  for(const entry of meshes){const m=entry[1];if(Math.hypot(m.position.x-px,m.position.z-pz)>UNLOAD_R){scene.remove(m);meshes.delete(entry[0]);}}
+}
+// water plane follows player (infinite sea below)
+const water=new THREE.Mesh(new THREE.PlaneGeometry(600,600),new THREE.MeshLambertMaterial({color:0x4FA3D8,transparent:true,opacity:.85}));
+water.rotation.x=-Math.PI/2;water.position.y=-2.6;scene.add(water);
+// restore saved blocks (data only, meshes stream in)
+(function restore(){
+  const saved=load();
+  if(saved&&saved.length){for(const s of saved){const i=s.lastIndexOf(':');const ck=s.slice(0,i),t=s.slice(i+1);const c=ck.split(',').map(Number);if(c.length!==3||!BLOCKS[t])continue;world.set(ck,t);genCols.add(c[0]+','+c[2]);}}
+})();
+// player
+// ---------- AVATAR 角色系统 (local + remote share it) ----------
+const SKINS=['#FFD9B3','#F1C27D','#E0AC69','#C68642','#8D5524'];
+const SHIRTS=['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#FD79A8','#2D3436'];
+const PANTS=['#2C3E50','#5D4037','#111111','#7F8C8D','#27AE60','#8E44AD'];
+const HATS=[{id:'none',zh:'无',py:'wú',e:'🚫'},{id:'cap',zh:'红帽',py:'hóng mào',e:'🧢'},{id:'straw',zh:'草帽',py:'cǎo mào',e:'👒'},{id:'hair',zh:'头发',py:'tóufa',e:'💇'},{id:'crown',zh:'王冠',py:'wángguān',e:'👑'}];
+function makeNameSprite(name){
+  const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');
+  g.fillStyle='rgba(0,0,0,.55)';const w=Math.min(240,20+g.measureText(name).width*0+name.length*22);g.beginPath();g.roundRect?g.roundRect((256-w)/2,6,w,52,14):g.rect((256-w)/2,6,w,52);g.fill();
+  g.fillStyle='#fff';g.font='bold 30px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(name,128,34);
+  const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));s.scale.set(2.4,0.6,1);s.position.y=2.55;return s;
+}
+function buildAvatar(look){
+  const g=new THREE.Group();const M=c=>new THREE.MeshLambertMaterial({color:c});
+  const legL=new THREE.Mesh(new THREE.BoxGeometry(.22,.5,.26),M(look.pants));legL.position.set(-.15,.25,0);g.add(legL);
+  const legR=legL.clone();legR.position.x=.15;g.add(legR);
+  const bod=new THREE.Mesh(new THREE.BoxGeometry(.6,.75,.4),M(look.shirt));bod.position.y=.88;g.add(bod);
+  const hed=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),M(look.skin));hed.position.y=1.5;g.add(hed);
+  const hats={};
+  const cap=new THREE.Mesh(new THREE.BoxGeometry(.54,.18,.54),M('#D63031'));cap.position.y=1.82;g.add(cap);hats.cap=cap;
+  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.08,12),M('#E8C547'));brim.position.y=1.76;g.add(brim);
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(.28,.32,.22,12),M('#E8C547'));top.position.y=1.9;g.add(top);hats.straw=new THREE.Group();hats.straw.add(brim,top);g.add(hats.straw);brim.position.set(0,0,0);top.position.set(0,.14,0);hats.straw.position.y=1.76;
+  const hair=new THREE.Mesh(new THREE.BoxGeometry(.54,.22,.54),M('#2D3436'));hair.position.y=1.72;g.add(hair);hats.hair=hair;
+  const crown=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.22,8),M('#FFD32A'));crown.position.y=1.88;g.add(crown);hats.crown=crown;
+  const tag=makeNameSprite(look.name||'我');g.add(tag);
+  g.userData={legL,legR,bod,hed,hats,tag};
+  applyLook(g,look);return g;
+}
+function applyLook(g,look){
+  const u=g.userData;u.legL.material.color.set(look.pants);u.legR.material.color.set(look.pants);
+  u.bod.material.color.set(look.shirt);u.hed.material.color.set(look.skin);
+  for(const k in u.hats){const h=u.hats[k];if(k==='straw'){h.visible=(look.hat==='straw');}else h.visible=(look.hat===k);}
+  if(u.tag){g.remove(u.tag);if(u.tag.material.map)u.tag.material.map.dispose();u.tag.material.dispose();}
+  u.tag=makeNameSprite(look.name||'我');g.add(u.tag);
+}
+const player=buildAvatar(S.look);
+scene.add(player);
+// ---------- NET 联机 P2P (Trystero, no server needed) ----------
+const remotePlayers=new Map();let NETOn=false,netRoom=null,netSendPos=null,netSendBuild=null,netSendChat=null,netSendHello=null;
+const buildLog=[];let netTick=0;const myId=Math.random().toString(36).slice(2,8);
+function lookArr(){return [S.look.name||'我',S.look.skin,S.look.shirt,S.look.pants,S.look.hat];}
+function logBuild(e){buildLog.push(e);if(buildLog.length>200)buildLog.shift();if(NETOn&&netSendBuild)netSendBuild(e);}
+function toLook(a){a=a||[];return {name:a[0]||'朋友',skin:a[1]||'#FFD9B3',shirt:a[2]||'#E74C3C',pants:a[3]||'#2C3E50',hat:a[4]||'none'};}
+function ensureRemote(id,arr){
+  const nl=toLook(arr);
+  let r=remotePlayers.get(id);
+  if(!r){const g=buildAvatar(nl);scene.add(g);r={g,tx:0,ty:0,tz:0,tyaw:0,look:nl};remotePlayers.set(id,r);updatePeerUI();}
+  else if(JSON.stringify(nl)!==JSON.stringify(r.look)){r.look=nl;applyLook(r.g,nl);}
+  return r;
+}
+function updatePeerUI(){
+  const n=remotePlayers.size;const pc=$('peerCount');if(pc)pc.textContent=n;
+  const pl=$('netPeerList');if(pl)pl.innerHTML=n?[...remotePlayers.values()].map(r=>`<span class="peerchip">${r.look.name||'朋友'}</span>`).join(''):'暂无 zànwú · nobody yet';
+}
+function chatAdd(who,txt){
+  const log=$('chatLog');if(!log)return;const d=document.createElement('div');d.className='chatmsg';d.innerHTML=`<b>${who}</b>：${txt}`;log.prepend(d);
+  while(log.children.length>20)log.lastChild.remove();
+}
+async function netJoin(code){
+  const status=$('netStatus');
+  try{
+    status.textContent='连接中 liánjiē zhōng · connecting…（最多等10秒）';
+    const mod=await import('https://cdn.jsdelivr.net/npm/@trystero-p2p/torrent@0.26.0/+esm');
+    netRoom=mod.joinRoom({appId:'wordworld-cihui-3d-v1'},'ww-'+code);
+    const aPos=netRoom.makeAction('pos',{onMessage:(data,ctx)=>{const r=ensureRemote(ctx.peerId,data.slice(4));r.tx=data[0];r.ty=data[1];r.tz=data[2];r.tyaw=data[3];}});
+    const aBuild=netRoom.makeAction('build',{onMessage:(data)=>{const e=data;if(e.a==='add'){addBlock(e.x,e.y,e.z,e.t);}else{removeBlock(key(e.x,e.y,e.z));}}});
+    const aChat=netRoom.makeAction('chat',{onMessage:(data,ctx)=>{chatAdd(data[0],data[1]);toast(`💬 ${data[0]}：${data[1]}`);}});
+    const aHello=netRoom.makeAction('hello',{onMessage:(data,ctx)=>{ensureRemote(ctx.peerId,data);}});
+    netSendPos=d=>{try{aPos.send(d).catch(()=>{});}catch(e){}};
+    netSendBuild=(d,target)=>{try{aBuild.send(d,target?{target}:undefined).catch(()=>{});}catch(e){}};
+    netSendChat=d=>{try{aChat.send(d).catch(()=>{});}catch(e){}};
+    netSendHello=(d,target)=>{try{aHello.send(d,target?{target}:undefined).catch(()=>{});}catch(e){}};
+    netRoom.onPeerJoin=id=>{updatePeerUI();netSendHello(lookArr(),id);for(const e of buildLog)netSendBuild(e,id);toast('👋 有朋友加入 yǒu péngyou · a friend joined!');};
+    netRoom.onPeerLeave=id=>{const r=remotePlayers.get(id);if(r){scene.remove(r.g);remotePlayers.delete(id);}updatePeerUI();toast('👋 朋友离开了 · friend left');};
+    NETOn=true;updatePeerUI();
+    status.textContent='已连接 yǐ liánjiē · connected! 房间 '+code+' — 走近一点就能互相看见';
+    netSendHello(lookArr());toast('🌐 联机成功！告诉朋友输入同一个房间号 · tell friends the code!');
+  }catch(e){NETOn=false;status.textContent='连接失败 shībài · failed（需要能上网才可联机，单人照常玩）';toast('🌐 联机失败：需要网络 · need internet for online');}
+}
+function netLeave(){NETOn=false;try{if(netRoom)netRoom.leave();}catch(e){}netRoom=null;netSendPos=netSendBuild=netSendChat=netSendHello=null;for(const r of remotePlayers.values())scene.remove(r.g);remotePlayers.clear();updatePeerUI();const s=$('netStatus');if(s)s.textContent='未连接 wèi liánjiē · offline（单人模式正常玩）';toast('已离开联机 · left online');}
+let px=(typeof window._sx==='number'?window._sx:0),pz=(typeof window._sz==='number'?window._sz:6),py=FLAT_Y+1.5,vy=0,grounded=true;
+streamWorld(true);py=topY(px,pz)+1.5;
+let yaw=0.6,pitch=0.5,dist=11;
+// input
+const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key===' '){e.preventDefault();jump();}});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+function jump(){if(grounded){vy=7;grounded=false;}}
+// joystick
+const joy=document.getElementById('joystick'),stick=document.getElementById('stick');
+let jx=0,jy=0,joyId=null;
+function joyPos(t){const r=joy.getBoundingClientRect();let dx=t.clientX-(r.left+r.width/2),dy=t.clientY-(r.top+r.height/2);const m=Math.min(44,Math.hypot(dx,dy));const a=Math.atan2(dy,dx);dx=Math.cos(a)*m;dy=Math.sin(a)*m;jx=dx/44;jy=dy/44;stick.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;}
+joy.addEventListener('touchstart',e=>{e.preventDefault();joyId=e.changedTouches[0].identifier;joyPos(e.changedTouches[0]);},{passive:false});
+addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifier===joyId)joyPos(t);}},{passive:true});
+addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===joyId){joyId=null;jx=0;jy=0;stick.style.transform='translate(-50%,-50%)';}}});
+// camera orbit + tap
+let lookId=null,lx=0,ly=0,downT=0,downX=0,downY=0,moved=false,pinchD=0;
+const cv=renderer.domElement;
+cv.style.touchAction='none';
+cv.addEventListener('touchstart',e=>{if(e.touches.length===2){pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}else{const t=e.touches[0];if(t.clientX>innerWidth*0.4){lookId=t.identifier;lx=t.clientX;ly=t.clientY;downT=performance.now();downX=t.clientX;downY=t.clientY;moved=false;}}},{passive:true});
+cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);dist=Math.max(5,Math.min(30,dist-(d-pinchD)*0.05));pinchD=d;return;}for(const t of e.changedTouches){if(t.identifier===lookId){const dx=t.clientX-lx,dy=t.clientY-ly;lx=t.clientX;ly=t.clientY;if(Math.hypot(t.clientX-downX,t.clientY-downY)>12)moved=true;yaw-=dx*0.006;pitch=Math.max(0.12,Math.min(1.4,pitch+dy*0.005));}}},{passive:true});
+cv.addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===lookId){lookId=null;if(!moved&&performance.now()-downT<350)tapInteract(t.clientX,t.clientY);}}});
+let mDown=false,mx=0,my=0;
+cv.addEventListener('mousedown',e=>{mDown=true;mx=e.clientX;my=e.clientY;});
+addEventListener('mousemove',e=>{if(mDown){yaw-=(e.clientX-mx)*0.006;pitch=Math.max(0.12,Math.min(1.4,pitch+(e.clientY-my)*0.005));mx=e.clientX;my=e.clientY;}});
+addEventListener('mouseup',e=>{if(mDown){mDown=false;if(Math.hypot(e.clientX-mx,e.clientY-my)<4)tapInteract(e.clientX,e.clientY);}});
+addEventListener('wheel',e=>{dist=Math.max(5,Math.min(30,dist+e.deltaY*0.01));},{passive:true});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+// interact
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
+function tapInteract(cx,cy){
+  ptr.x=(cx/innerWidth)*2-1;ptr.y=-(cy/innerHeight)*2+1;ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects([...meshes.values()]);
+  if(!hits.length)return;const h=hits[0];
+  const k=h.object.userData.k;const [bx,by,bz]=k.split(',').map(Number);
+  if(S.mode==='dig'){
+    if(by<=-2){toast('基岩不能挖 jīyán · Bedrock!');return;}
+    const t=world.get(k);removeBlock(k);logBuild({a:'del',x:bx,y:by,z:bz});
+    let gain=(S.tool==='pick'||S.tool==='shovel')?2:1;S.inv[t]=(S.inv[t]||0)+gain;
+    toast(`+${gain} ${BLOCKS[t].zh} ${BLOCKS[t].py} · ${BLOCKS[t].en}`);
+    pop(h.point);
+  }else{
+    const t=S.sel;if((S.inv[t]||0)<=0){toast(`没有${BLOCKS[t].zh}了！去答题赚取 qù dátí · Quiz to earn!`);openModal('mQuiz');quiz();return;}
+    const n=h.face?h.point.clone().add(h.face.normal.multiplyScalar(0.5)):new THREE.Vector3(bx,by+1,bz);
+    const tx=Math.round(n.x),ty=Math.round(n.y),tz=Math.round(n.z);
+    const place=(x,y,z)=>{if(world.has(key(x,y,z)))return false;addBlock(x,y,z,t);logBuild({a:'add',x,y,z,t});return true;};
+    if(S.tool==='hammer'){let c=0;for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){if((S.inv[t]||0)<=0)break;if(place(tx+dx,ty,tz+dz)){S.inv[t]--;c++;}}toast(`🔨 铺了 pūle ${c} 块 kuài · placed!`);}
+    else{if(place(tx,ty,tz)){S.inv[t]--;pop(new THREE.Vector3(tx,ty,tz));}}
+  }
+  refresh();save();
+}
+function pop(p){const s=new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),new THREE.MeshBasicMaterial({color:0xFFC93C}));s.position.copy(p);scene.add(s);let t=0;const iv=setInterval(()=>{t++;s.position.y+=.08;s.scale.multiplyScalar(.9);if(t>12){clearInterval(iv);scene.remove(s);}},40);}
+// loop
+let last=performance.now(),streamTick=0;
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;
+  let mx2=0,mz2=0;
+  if(keys['w']||keys['arrowup'])mz2-=1;if(keys['s']||keys['arrowdown'])mz2+=1;if(keys['a']||keys['arrowleft'])mx2-=1;if(keys['d']||keys['arrowright'])mx2+=1;
+  mx2+=jx;mz2+=jy;
+  const sp=S.tool==='shovel'?7:4.5;
+  const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
+  px+=(fx*-mz2+rx*mx2)*sp*dt;pz+=(fz*-mz2+rz*mx2)*sp*dt;
+  // infinite: no border clamp, stream terrain around player
+  streamTick+=dt;if(streamTick>0.25){streamTick=0;streamWorld(false);unloadFar();const ce=$('coords');if(ce)ce.textContent=Math.round(px)+','+Math.round(pz);}
+  water.position.x=px;water.position.z=pz;
+  vy-=20*dt;py+=vy*dt;
+  const ty=topY(px,pz)+1.5;
+  if(py<=ty){py=ty;vy=0;grounded=true;}else if(py>ty+0.1)grounded=false;
+  if(py<-8){py=6;vy=0;}
+  player.position.set(px,py-1.5,pz);player.rotation.y=yaw+Math.PI;
+  // net: broadcast self 8x/sec + smooth remote players
+  if(NETOn&&netSendPos){netTick+=dt;if(netTick>0.12){netTick=0;try{netSendPos([Math.round(px*10)/10,Math.round(py*10)/10,Math.round(pz*10)/10,Math.round(yaw*100)/100,...lookArr()]);}catch(e){}}}
+  for(const r of remotePlayers.values()){const g=r.g;const k=1-Math.exp(-10*dt);g.position.x+=(r.tx-g.position.x)*k;g.position.y+=(r.ty-1.5-g.position.y)*k;g.position.z+=(r.tz-g.position.z)*k;g.rotation.y=r.tyaw+Math.PI;}
+  const cx=px+Math.sin(yaw)*Math.cos(pitch)*dist,cz=pz+Math.cos(yaw)*Math.cos(pitch)*dist,cy2=py+Math.sin(pitch)*dist+1;
+  camera.position.set(cx,cy2,cz);camera.lookAt(px,py+1,pz);
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(loop);
+
+// ---------- UI ----------
+const $=id=>document.getElementById(id);
+function toast(t){const el=$('toast');el.textContent=t;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',2200);}
+function openModal(id){$(id).classList.add('open');}
+function closeModals(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));}
+function refresh(){
+  $('stars').textContent=S.stars;$('streak').textContent=S.streak;
+  const hb=$('hotbar');hb.innerHTML='';
+  for(const k of HOTBAR){const b=BLOCKS[k];const d=document.createElement('div');d.className='slot'+(S.sel===k?' sel':'');d.innerHTML=`<span class="ct">${S.inv[k]||0}</span><span class="swatch" style="background:#${b.c.toString(16).padStart(6,'0')}"></span><span class="nm">${b.zh}</span><span class="py">${b.py}·${b.en}</span>`;d.onclick=()=>{S.sel=k;if(S.mode!=='build'){setMode('build');}refresh();};hb.appendChild(d);}
+  $('modeTxt').textContent=S.mode==='dig'?'挖掉':'建造';
+  $('btnMode').className='bigbtn '+(S.mode==='dig'?'mode-dig':'mode-build');
+  $('btnMode').querySelector('.e').textContent=S.mode==='dig'?'⛏️':'🧱';
+  renderBag();renderCraft();renderShop();
+}
+function setMode(m){S.mode=m;refresh();}
+function renderBag(){
+  $('bagList').innerHTML=Object.keys(BLOCKS).map(k=>{const b=BLOCKS[k];return `<div class="card"><span style="font-size:26px">${b.e}</span><div class="grow"><b>${b.zh}</b> <span style="color:#888">${b.py}</span><br><small style="color:#2C7FB8">${b.en}</small> × <b>${S.inv[k]||0}</b></div><button class="mbtn" data-sel="${k}">选择 xuǎn·Use</button></div>`}).join('');
+  $('bagList').querySelectorAll('[data-sel]').forEach(btn=>btn.onclick=()=>{S.sel=btn.dataset.sel;setMode('build');closeModals();toast(`已选 yǐ xuǎn ${BLOCKS[S.sel].zh} · ${BLOCKS[S.sel].en}`);});
+  $('toolList').innerHTML=Object.keys(TOOLS).map(k=>{const t=TOOLS[k];const owned=S.tools.includes(k);return `<div class="card"><span style="font-size:26px">${t.e}</span><div class="grow"><b>${t.zh}</b> ${t.py} · ${t.en} ${S.tool===k?'✅':''}<br><small>${t.desc}</small></div>${owned?`<button class="mbtn" data-tool="${k}">装备 zhuāng·Equip</button>`:`<span>🔒</span>`}</div>`}).join('');
+  $('toolList').querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{S.tool=b.dataset.tool;save();refresh();closeModals();toast(`已装备 ${TOOLS[S.tool].zh} · equipped!`);});
+}
+function renderCraft(){
+  $('craftList').innerHTML=RECIPES.map((r,i)=>{const can=Object.entries(r.need).every(([k,n])=>(S.inv[k]||0)>=n);const need=Object.entries(r.need).map(([k,n])=>`${n}×${BLOCKS[k].zh}`).join('+');return `<div class="card"><span style="font-size:26px">${BLOCKS[r.out].e}</span><div class="grow"><b>${r.zh}</b><br><small>${r.py} · ${r.en}</small><br><small>需要 xūyào: ${need}</small></div><button class="mbtn" data-c="${i}" ${can?'':'disabled'}>合成 +${r.n}</button></div>`}).join('');
+  $('craftList').querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const r=RECIPES[+b.dataset.c];for(const [k,n] of Object.entries(r.need))S.inv[k]-=n;S.inv[r.out]=(S.inv[r.out]||0)+r.n;save();refresh();toast(`⚒️ 合成成功 ${BLOCKS[r.out].zh}×${r.n} · crafted!`);});
+}
+function renderShop(){
+  $('shopList').innerHTML=Object.keys(TOOLS).filter(k=>k!=='hand').map(k=>{const t=TOOLS[k];const owned=S.tools.includes(k);return `<div class="card"><span style="font-size:26px">${t.e}</span><div class="grow"><b>${t.zh} ${t.py}</b> · ${t.en}<br><small>${t.desc}</small><br><b>⭐ ${t.price}</b></div>${owned?`<button class="mbtn" data-eq="${k}">装备 Equip</button>`:`<button class="mbtn buy" data-buy="${k}" ${S.stars>=t.price?'':'disabled'}>兑换 Buy</button>`}</div>`}).join('')+`<div class="card"><span style="font-size:26px">🎁</span><div class="grow"><b>神秘方块包 shénmì · Mystery pack</b><br><small>5⭐ → 随机5方块 suíjī · random blocks</small></div><button class="mbtn buy" id="buyPack" ${S.stars>=5?'':'disabled'}>兑换</button></div>`;
+  $('shopList').querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const k=b.dataset.buy;if(S.stars<TOOLS[k].price)return;S.stars-=TOOLS[k].price;S.tools.push(k);S.tool=k;save();refresh();toast(`${TOOLS[k].e} 获得 ${TOOLS[k].zh}！· got ${TOOLS[k].en}!`);speak(TOOLS[k].zh);});
+  $('shopList').querySelectorAll('[data-eq]').forEach(b=>b.onclick=()=>{S.tool=b.dataset.eq;save();refresh();closeModals();});
+  const bp=$('buyPack');if(bp)bp.onclick=()=>{if(S.stars<5)return;S.stars-=5;const keys2=Object.keys(BLOCKS);for(let i=0;i<5;i++){const k=keys2[Math.floor(Math.random()*keys2.length)];S.inv[k]=(S.inv[k]||0)+1;}save();refresh();toast('🎁 获得5个随机方块 · 5 random blocks!');};
+}
+// quiz
+let cur=null;
+function quiz(){
+  const w=WORDS[Math.floor(Math.random()*WORDS.length)];
+  const dir=Math.random()<0.5?'en2zh':'zh2en';
+  const pool=[...WORDS].filter(x=>x[0]!==w[0]).sort(()=>Math.random()-0.5).slice(0,3);
+  if(dir==='en2zh'){cur={q:w[0],qp:'',qe:'choose 中文 + pinyin',a:w[1],aw:w,opts:[w,...pool].sort(()=>Math.random()-0.5),show:x=>`${x[1]} <small>${x[2]}</small>`};$('qText').textContent=`"${w[0]}" 是什么意思？`;$('qPy').textContent='shì shénme yìsi? · What does it mean?';$('qEn').textContent='Pick the correct 中文 Chinese + pīnyīn';}
+  else{cur={q:`${w[1]} ${w[2]}`,qp:w[2],qe:w[1],a:w[0],aw:w,opts:[w,...pool].sort(()=>Math.random()-0.5),show:x=>x[0]};$('qText').textContent=`${w[1]} (${w[2]}) = ?`;$('qPy').textContent=`${w[2]} · yīngyǔ zěnme shuō?`; $('qEn').textContent='How do you say it in English?';}
+  $('qReward').textContent='';$('qStreak').textContent=S.streak>1?`🔥连击 liánjī ×${S.streak}`:'';
+  const box=$('qOpts');box.innerHTML='';
+  for(const o of cur.opts){const b=document.createElement('button');b.className='opt';b.innerHTML=cur.show(o);b.onclick=()=>answer(o,b);box.appendChild(b);}
+  speak(cur.q.replace(/[()]/g,''));
+}
+function answer(o,btn){
+  const btns=[...document.querySelectorAll('.opt')];btns.forEach(b=>b.disabled=true);
+  if(o[0]===cur.aw[0]){
+    btn.classList.add('correct');S.streak++;
+    const bonus=S.streak>=3?1:0;const sg=2+bonus;S.stars+=sg;
+    const keys2=['dirt','wood','stone','sand','plank','grass','brick','glass','lamp','leaves'];
+    const r1=keys2[Math.floor(Math.random()*6)],r2=keys2[Math.floor(Math.random()*keys2.length)];
+    const n1=2+Math.floor(Math.random()*2),n2=Math.random()<0.3?1:0;
+    S.inv[r1]=(S.inv[r1]||0)+n1;if(n2)S.inv[cur.aw[0].length>4?'lamp':'brick']=(S.inv[cur.aw[0].length>4?'lamp':'brick']||0)+1;
+    $('qReward').textContent=`✅ 答对了 dá duì le! +${n1}×${BLOCKS[r1].zh} +⭐${sg}${n2?' +🎁神秘':' Strong!'}`;
+    speak('答对了! Very good!');confetti();
+  }else{
+    btn.classList.add('wrong');S.streak=0;
+    btns.forEach(b=>{if(b.textContent.includes(cur.aw[0])||b.textContent.includes(cur.aw[1]))b.classList.add('correct');});
+    $('qReward').textContent=`❌ 答案是 dá'àn shì ${cur.aw[1]} ${cur.aw[2]} = ${cur.aw[0]}`;
+    speak(`正确答案是 ${cur.aw[1]}`);
+  }
+  save();refresh();
+  setTimeout(()=>{if($('mQuiz').classList.contains('open'))quiz();},2200);
+}
+function confetti(){for(let i=0;i<10;i++)setTimeout(()=>pop(new THREE.Vector3(px+(Math.random()-0.5)*4,py+3,pz+(Math.random()-0.5)*4)),i*80);}
+// speech
+let soundOn=true;
+function speak(t){if(!soundOn)return;try{const u=new SpeechSynthesisUtterance(t);u.lang=/[\u4e00-\u9fa5]/.test(t)?'zh-CN':'en-US';speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+// wire
+$('btnMode').onclick=()=>setMode(S.mode==='dig'?'build':'dig');
+$('btnQuiz').onclick=()=>{openModal('mQuiz');quiz();};
+$('btnBag').onclick=()=>openModal('mBag');
+$('btnCraft').onclick=()=>openModal('mCraft');
+$('btnShop').onclick=()=>openModal('mShop');
+$('qClose').onclick=closeModals;$('bagClose').onclick=closeModals;$('craftClose').onclick=closeModals;$('shopClose').onclick=closeModals;
+$('qNext').onclick=quiz;$('qSpeak').onclick=()=>cur&&speak(cur.aw[1]+' '+cur.aw[0]);
+$('jumpBtn').addEventListener('touchstart',e=>{e.preventDefault();jump();},{passive:false});
+$('jumpBtn').onclick=()=>jump();
+$('btnHelp').onclick=()=>$('help').style.display='flex';
+$('startPlay').onclick=()=>{$('help').style.display='none';speak('欢迎来到词汇世界! Welcome to Word World!');};
+$('btnSound').onclick=e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'🔊':'🔇';};
+$('btnSave').onclick=()=>{save();toast('💾 已保存 yǐ bǎocún · Saved!');};
+// ---------- LOOK 角色打扮 ----------
+function renderLook(){
+  $('lookName').value=S.look.name||'';
+  const mk=(el,arr,cur,fn)=>{const box=$(el);box.innerHTML='';for(const c of arr){const d=document.createElement('div');d.className='sw'+(c===cur?' sel':'');d.style.background=c;d.onclick=()=>{fn(c);renderLook();};box.appendChild(d);}};
+  mk('swSkin',SKINS,S.look.skin,c=>{S.look.skin=c;applyLook(player,S.look);save();});
+  mk('swShirt',SHIRTS,S.look.shirt,c=>{S.look.shirt=c;applyLook(player,S.look);save();});
+  mk('swPants',PANTS,S.look.pants,c=>{S.look.pants=c;applyLook(player,S.look);save();});
+  const hr=$('hatRow');hr.innerHTML='';
+  for(const h of HATS){const b=document.createElement('button');b.className='mbtn'+(S.look.hat===h.id?'':' ghost');b.style.margin='2px';b.textContent=`${h.e}${h.zh}`;b.title=`${h.py}·${h.id}`;b.onclick=()=>{S.look.hat=h.id;applyLook(player,S.look);save();renderLook();if(NETOn&&netSendHello)netSendHello(lookArr());};hr.appendChild(b);}
+}
+$('lookName').addEventListener('change',e=>{S.look.name=(e.target.value||'我').slice(0,10);applyLook(player,S.look);save();if(NETOn&&netSendHello)netSendHello(lookArr());toast(`我是 ${S.look.name}！· I'm ${S.look.name}!`);});
+$('btnLook').onclick=()=>{renderLook();openModal('mLook');};
+$('lookClose').onclick=closeModals;
+// ---------- NET 联机 ----------
+const CHATS=['你好 nǐ hǎo · Hi!','来看我的房子 kàn fángzi · See my house!','一起盖房子 yìqǐ gài · Build together!','去答题赚方块 qù dátí · Go earn blocks!','太棒了 tài bàng le · Awesome!','拜拜 báibái · Bye!'];
+$('chatRow').innerHTML='';
+for(const c of CHATS){const b=document.createElement('button');b.className='chatbtn';b.textContent=c.split(' ')[0]+' '+c.split(' ')[1];b.onclick=()=>{chatAdd(S.look.name||'我',c);if(NETOn&&netSendChat)netSendChat([S.look.name||'我',c]);else toast('先进入联机房间再聊天 · join a room first');};$('chatRow').appendChild(b);}
+$('btnNet').onclick=()=>{updatePeerUI();openModal('mNet');};
+$('netClose').onclick=closeModals;
+$('netJoin').onclick=()=>{const code=($('netRoom').value||'sanban').trim().toLowerCase().replace(/[^a-z0-9]/g,'')||'sanban';$('netRoom').value=code;closeModals();netJoin(code);};
+$('netLeave').onclick=()=>{netLeave();};
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+setInterval(save,15000);
+refresh();
+</script>
+</body>
+</html>
