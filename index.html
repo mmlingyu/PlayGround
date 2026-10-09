@@ -72,9 +72,25 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
 .chatmsg{background:#fff;border-radius:12px;padding:8px 10px;font-size:14px;border:1px solid #E5D9BC}
 .chatbtn{background:#fff;border:2px solid #A29BFE;border-radius:12px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer}
 .peerchip{display:inline-block;background:#DFE6E9;border-radius:10px;padding:2px 8px;margin:2px;font-size:12px;font-weight:700}
+.peerchip.owner{background:#FFF3CD;border:2px solid #FFC93C}
+.presetgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.preset{border:3px solid #E5D9BC;background:#fff;border-radius:14px;padding:8px 2px;text-align:center;cursor:pointer}
+.preset:active{transform:scale(.94)}
+.preset .pe{font-size:28px;line-height:1.2}
+.preset .pn{font-size:12px;font-weight:900}
+.preset .pp{font-size:10px;color:#888}
+.preset.sel{border-color:#E67E22;background:#FFF3E2;box-shadow:0 2px 8px rgba(230,126,34,.4)}
+.roomcard{background:#fff;border-radius:16px;padding:12px;margin:8px 0;border:2px solid #E5D9BC}
+.roomcard.mine{border-color:#2ECC71;background:#F0FDF4}
+.roomcard.current{border-color:#6c5ce7;background:#F1EFFF}
+.roomcard .rcode{font-size:18px;font-weight:900}
+.roomcard .rowline{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.ownerbadge{background:linear-gradient(135deg,#FFC93C,#E67E22);color:#fff;font-weight:900;border-radius:12px;padding:3px 10px;font-size:13px;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.minebadge{background:#2ECC71;color:#fff;font-weight:900;border-radius:10px;padding:2px 8px;font-size:12px}
+.livebadge{background:#E74C3C;color:#fff;font-weight:900;border-radius:10px;padding:2px 8px;font-size:12px}
+#net-pill.is-owner{border-color:#FFC93C!important;box-shadow:0 0 0 2px #FFC93C}
 @media (min-width:760px){.sheet{border-radius:20px;margin-bottom:20px}#joystick{bottom:120px}#sidebtns{right:16px}.slot{min-width:70px;width:70px}}
 </style>
-<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
 </head>
 <body>
 <div id="game"></div>
@@ -140,10 +156,13 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
 <div class="modal" id="mLook"><div class="sheet">
   <h2>🎨 我的角色 <span style="font-weight:400;font-size:14px">wǒ de juésè · My avatar</span></h2>
   <div class="pyline">dǎban zìjǐ，liánjī shí péngyou yě kàn得见 — dress up, friends see it online too</div>
+  <div class="card"><div class="grow"><b>⭐ 明星角色 míngxīng · Star presets</b><div class="pyline">diǎn yíxià zhěngtào huànshàng — one tap to transform!</div><div class="presetgrid" id="lookPresets"></div></div></div>
   <div class="card"><div class="grow"><b>名字 míngzi · Name</b><br><input class="txtin" id="lookName" maxlength="10" placeholder="如：小建筑师"></div></div>
-  <div class="card"><div class="grow"><b>肤色 fūsè · Skin</b><div class="swatches" id="swSkin"></div></div></div>
-  <div class="card"><div class="grow"><b>衣服 yīfu · Shirt</b><div class="swatches" id="swShirt"></div></div></div>
-  <div class="card"><div class="grow"><b>裤子 kùzi · Pants</b><div class="swatches" id="swPants"></div></div></div>
+  <div class="card"><div class="grow"><b>身体 shēntǐ · Body</b><div class="swatches" id="swShirt"></div></div></div>
+  <div class="card"><div class="grow"><b>小手肤色 fūsè · Skin</b><div class="swatches" id="swSkin"></div></div></div>
+  <div class="card"><div class="grow"><b>小脚 jiǎo · Feet</b><div class="swatches" id="swPants"></div></div></div>
+  <div class="card"><div class="grow"><b>耳朵 ěrduo · Ears</b><div class="row" id="earRow"></div></div></div>
+  <div class="card"><div class="grow"><b>尾巴 wěiba · Tail</b><div class="row" id="tailRow"></div></div></div>
   <div class="card"><div class="grow"><b>帽子 màozi · Hat</b><div class="row" id="hatRow"></div></div></div>
   <div class="row"><button class="mbtn ghost" id="lookClose" style="flex:1">✖ 关闭 Close</button></div>
 </div></div>
@@ -152,7 +171,10 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
   <h2>🌐 联机 <span style="font-weight:400;font-size:14px">liánjī · Play together</span></h2>
   <div class="pyline">hé péngyou shūrù tóngyíge fángjiān háo — type the SAME room code with friends, no account needed</div>
   <div class="card"><div class="grow"><b>房间号 fángjiān hào · Room code</b><br><input class="txtin" id="netRoom" maxlength="16" placeholder="如：sanban"></div><button class="mbtn" id="netJoin">进入 Join</button></div>
-  <div class="card"><div class="grow"><b>状态 zhuàngtài · Status</b><br><small id="netStatus">未连接 wèi liánjiē · offline（单人模式正常玩）</small><br><small>在线 zàixiàn · Online: <b id="netPeerList"></b></small></div><button class="mbtn ghost" id="netLeave">离开 Leave</button></div>
+  <h3>🏠 所有房间 suǒyǒu fángjiān · Public rooms <button class="mbtn ghost" id="roomRefresh" style="padding:6px 10px;font-size:12px">🔄 刷新 shuāxīn·Refresh</button></h3>
+  <div class="pyline" id="lobbyStatus">dàtīng liánjiē zhōng… · connecting lobby…</div>
+  <div id="roomDirList"><div class="card"><div class="grow">🔍 正在发现房间… fángjiān sōusuǒ zhōng · finding rooms…</div></div></div>
+  <div class="card"><div class="grow"><b>状态 zhuàngtài · Status</b><br><small id="netStatus">未连接 wèi liánjiē · offline（单人模式正常玩）</small><br><small id="curOwnerLine">👑 房主 fángzhǔ · Owner: —</small><br><small>在线 zàixiàn · Online: <b id="netPeerList"></b></small></div><button class="mbtn ghost" id="netLeave">离开 Leave</button></div>
   <h3>💬 快聊 kuài liáo · Quick chat</h3>
   <div class="row" id="chatRow"></div>
   <div class="chatlog" id="chatLog"></div>
@@ -169,15 +191,26 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
     <li>🛒 <b>兑换 duìhuàn</b>：星星换铲子/镐子/锤子，挖更快、锤子一次铺3×3！</li>
     <li>🕹️ 左摇杆走路，右半屏拖动转视角，双指缩放；<span class="kbd">WASD</span> + <span class="kbd">Space</span> 也可在电脑玩</li>
       <li>🌍 <b>无限平地 wúxiàn píngdì · Infinite flat world</b>：一直走，世界一直长出来，没有边界！</li>
-      <li>🎨 <b>角色 juésè</b>：换名字、肤色、衣服、帽子，做独一无二的自己</li>
-      <li>🌐 <b>联机 liánjī</b>：和朋友输入<b>同一个房间号</b>，就能互相看见、一起盖房子、发快聊（P2P直连，不用注册）</li>
+      <li>🎨 <b>角色 juésè</b>：蛋形身+大眼睛+兽耳尾巴，8个⭐<b>明星角色 míngxīng</b>一键变身，也可自由混搭</li>
+      <li>🌐 <b>联机 liánjī</b>：点🌐打开<b>房间大厅 dàtīng·lobby</b>，所有房间和👑<b>房主 fángzhǔ·owner</b>一目了然，点进入就能一起玩！也可以和朋友输入同一个房间号（P2P直连，不用注册）</li>
   </ol>
   <button class="mbtn" id="startPlay" style="width:100%;font-size:18px;padding:14px">▶ 开始建造 kāi shǐ · Play！</button>
   <p style="font-size:12px;color:#888;text-align:center">进度自动保存在本机 · progress auto-saves locally 💾</p>
 </div></div>
 
 <script type="module">
-import * as THREE from 'three';
+// Three.js 先用本地 vendor(随项目一起发布,不挑浏览器/不断网),本地没有再回退 CDN
+let THREE;
+try { THREE = await import('./vendor/three.module.js'); }
+catch(e1){
+  try { THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'); }
+  catch(e2){
+    document.getElementById('help').style.display='flex';
+    document.querySelector('#help .inner').insertAdjacentHTML('afterbegin',
+      `<div class="card" style="border-color:#E74C3C"><div class="grow"><b>⚠️ 3D 引擎加载失败 jiāzài shībài</b><br><small>请检查网络后刷新重试 · check internet & reload<br>${String(e2&&e2.message||e2).slice(0,120)}</small></div></div>`);
+    throw e2;
+  }
+}
 
 // ---------- DATA ----------
 const BLOCKS = {
@@ -217,7 +250,7 @@ const WORDS = [
   ['eye','眼睛','yǎnjing'],['happy','快乐','kuàilè'],['big','大','dà'],['small','小','xiǎo'],
   ['pig','猪','zhū'],['duck','鸭子','yāzi'],['tiger','老虎','lǎohǔ'],['panda','熊猫','xióngmāo'],
 ];
-let S = {inv:{grass:12,dirt:16,wood:8,plank:4,stone:6,brick:2,glass:2,sand:6,leaves:4,lamp:1},stars:5,streak:0,tools:['hand'],tool:'hand',mode:'dig',sel:'grass',look:{name:'小建筑师',skin:'#FFD9B3',shirt:'#E74C3C',pants:'#2C3E50',hat:'cap'}};
+let S = {inv:{grass:12,dirt:16,wood:8,plank:4,stone:6,brick:2,glass:2,sand:6,leaves:4,lamp:1},stars:5,streak:0,tools:['hand'],tool:'hand',mode:'dig',sel:'grass',look:{name:'小建筑师',skin:'#FFD9B3',shirt:'#F6C945',pants:'#E67E22',hat:'none',ears:'cat',tail:'round'}};
 
 // ---------- SAVE (infinite world: cap entries to protect localStorage) ----------
 function save(){try{const entries=[...world.entries()];entries.sort((a,b)=>{const pa=a[0].split(',').map(Number),pb=b[0].split(',').map(Number);const da=Math.max(Math.abs(pa[0]-px),Math.abs(pa[2]-pz)),db=Math.max(Math.abs(pb[0]-px),Math.abs(pb[2]-pz));return da-db;});const slim=entries.slice(0,9000).map(([k,v])=>k+':'+v);localStorage.setItem('wordworld_v2',JSON.stringify({inv:S.inv,stars:S.stars,tools:S.tools,tool:S.tool,look:S.look,world:slim,px,pz}));}catch(e){}}
@@ -280,53 +313,165 @@ const SKINS=['#FFD9B3','#F1C27D','#E0AC69','#C68642','#8D5524'];
 const SHIRTS=['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#FD79A8','#2D3436'];
 const PANTS=['#2C3E50','#5D4037','#111111','#7F8C8D','#27AE60','#8E44AD'];
 const HATS=[{id:'none',zh:'无',py:'wú',e:'🚫'},{id:'cap',zh:'红帽',py:'hóng mào',e:'🧢'},{id:'straw',zh:'草帽',py:'cǎo mào',e:'👒'},{id:'hair',zh:'头发',py:'tóufa',e:'💇'},{id:'crown',zh:'王冠',py:'wángguān',e:'👑'}];
+const EARS=[{id:'none',zh:'无',py:'wú',e:'🚫'},{id:'cat',zh:'猫耳',py:'māo ěr',e:'🐱'},{id:'bunny',zh:'兔耳',py:'tù ěr',e:'🐰'},{id:'bear',zh:'熊耳',py:'xióng ěr',e:'🐻'}];
+const TAILS=[{id:'none',zh:'无',py:'wú',e:'🚫'},{id:'round',zh:'圆尾',py:'yuán wěi',e:'⚪'}];
+// ⭐ 默认角色库 mòrèn juésè kù · preset stars:只换装扮不改名,一键变身!
+const LOOKS=[
+ {e:'🥚',zh:'原味蛋',py:'yuánwèi dàn',en:'Classic Egg',look:{skin:'#FFD9B3',shirt:'#F6C945',pants:'#E67E22',hat:'none',ears:'cat',tail:'round'}},
+ {e:'🐱',zh:'蜜桃猫',py:'mìtáo māo',en:'Peach Cat',look:{skin:'#FFE3D0',shirt:'#FD79A8',pants:'#E0568B',hat:'none',ears:'cat',tail:'round'}},
+ {e:'🐰',zh:'雪团兔',py:'xuětuán tù',en:'Snow Bunny',look:{skin:'#FFD9B3',shirt:'#F5EFE0',pants:'#D5C9B4',hat:'none',ears:'bunny',tail:'round'}},
+ {e:'🐻',zh:'巧克力熊',py:'qiǎokèlì xióng',en:'Choco Bear',look:{skin:'#E8B98A',shirt:'#8D5A2B',pants:'#5A3A1A',hat:'none',ears:'bear',tail:'round'}},
+ {e:'🐸',zh:'荷叶蛙',py:'héyè wā',en:'Froggy',look:{skin:'#D6F5C0',shirt:'#58CC5B',pants:'#2E9E44',hat:'straw',ears:'none',tail:'none'}},
+ {e:'🐧',zh:'企鹅蓝',py:'qìé lán',en:'Penguin',look:{skin:'#FFD9B3',shirt:'#34495E',pants:'#E67E22',hat:'none',ears:'none',tail:'round'}},
+ {e:'🦊',zh:'蜜橙狐',py:'mìchéng hú',en:'Honey Fox',look:{skin:'#FFE3C2',shirt:'#F0932B',pants:'#B96A1B',hat:'none',ears:'cat',tail:'round'}},
+ {e:'👑',zh:'星星王',py:'xīngxing wáng',en:'Star King',look:{skin:'#FFD9B3',shirt:'#9B59B6',pants:'#6C3483',hat:'crown',ears:'bear',tail:'round'}},
+];
 function makeNameSprite(name){
   const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');
   g.fillStyle='rgba(0,0,0,.55)';const w=Math.min(240,20+g.measureText(name).width*0+name.length*22);g.beginPath();g.roundRect?g.roundRect((256-w)/2,6,w,52,14):g.rect((256-w)/2,6,w,52);g.fill();
   g.fillStyle='#fff';g.font='bold 30px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(name,128,34);
   const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));s.scale.set(2.4,0.6,1);s.position.y=2.55;return s;
 }
+function shade(hex,f){try{const n=parseInt(String(hex).slice(1),16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;const m=v=>Math.round(v+(255-v)*f);return '#'+((1<<24)+(m(r)<<16)+(m(g)<<8)+m(b)).toString(16).slice(1);}catch(e){return '#FFFFFF';}}
 function buildAvatar(look){
-  const g=new THREE.Group();const M=c=>new THREE.MeshLambertMaterial({color:c});
-  const legL=new THREE.Mesh(new THREE.BoxGeometry(.22,.5,.26),M(look.pants));legL.position.set(-.15,.25,0);g.add(legL);
-  const legR=legL.clone();legR.position.x=.15;g.add(legR);
-  const bod=new THREE.Mesh(new THREE.BoxGeometry(.6,.75,.4),M(look.shirt));bod.position.y=.88;g.add(bod);
-  const hed=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.5),M(look.skin));hed.position.y=1.5;g.add(hed);
+  const g=new THREE.Group();
+  const M=(c,ex)=>new THREE.MeshLambertMaterial(Object.assign({color:c},ex||{}));
+  const mats={body:M(look.shirt||'#F6C945'),belly:M(shade(look.shirt||'#F6C945',.55)),skin:M(look.skin||'#FFD9B3'),feet:M(look.pants||'#E67E22'),white:M('#FFFFFF'),dark:M('#222222'),pink:M('#FF9EB5'),mouth:M('#7A3B2E',{side:THREE.DoubleSide})};
+  // 🥚 蛋身 dànshēn · egg body
+  const bod=new THREE.Mesh(new THREE.SphereGeometry(.5,24,18),mats.body);
+  bod.scale.set(1,1.15,.95);bod.position.y=.95;g.add(bod);
+  // 肚皮 dùpí · belly
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(.3,20,14),mats.belly);
+  belly.scale.set(1,1.15,.5);belly.position.set(0,.82,-.34);g.add(belly);
+  // 👀 大眼睛 dà yǎnjing · face toward camera (local -z)
+  const mkEye=x=>{
+    const w=new THREE.Mesh(new THREE.SphereGeometry(.11,14,10),mats.white);
+    w.scale.set(1,1.25,.6);w.position.set(x,1.22,-.4);g.add(w);
+    const p=new THREE.Mesh(new THREE.SphereGeometry(.055,12,8),mats.dark);
+    p.position.set(x,1.22,-.475);g.add(p);
+    const h=new THREE.Mesh(new THREE.SphereGeometry(.02,8,6),mats.white);
+    h.position.set(x+.02,1.25,-.52);g.add(h);
+  };
+  mkEye(-.17);mkEye(.17);
+  // 腮红 sāihóng · blush
+  [-1,1].forEach(s=>{const b=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),mats.pink);b.scale.set(1,.8,.5);b.position.set(s*.3,1.08,-.44);g.add(b);});
+  // 微笑 wéixiào · smile
+  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.07,.018,8,14,Math.PI),mats.mouth);
+  mouth.position.set(0,1.1,-.455);mouth.rotation.z=Math.PI;g.add(mouth);
+  // 小手 xiǎoshǒu · stubby arms
+  const armL=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.16,6,12),mats.skin);
+  armL.position.set(-.52,.92,0);armL.rotation.z=.5;g.add(armL);
+  const armR=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.16,6,12),mats.skin);
+  armR.position.set(.52,.92,0);armR.rotation.z=-.5;g.add(armR);
+  // 小脚 xiǎojiǎo · feet
+  const footL=new THREE.Mesh(new THREE.SphereGeometry(.16,14,10),mats.feet);
+  footL.scale.set(1,.6,1.2);footL.position.set(-.2,.1,-.04);g.add(footL);
+  const footR=footL.clone();footR.position.x=.2;g.add(footR);
+  const earG=new THREE.Group();g.add(earG);
+  const tailG=new THREE.Group();g.add(tailG);
+  // 帽子 màozi · hats (fit round head)
   const hats={};
-  const cap=new THREE.Mesh(new THREE.BoxGeometry(.54,.18,.54),M('#D63031'));cap.position.y=1.82;g.add(cap);hats.cap=cap;
-  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.08,12),M('#E8C547'));brim.position.y=1.76;g.add(brim);
-  const top=new THREE.Mesh(new THREE.CylinderGeometry(.28,.32,.22,12),M('#E8C547'));top.position.y=1.9;g.add(top);hats.straw=new THREE.Group();hats.straw.add(brim,top);g.add(hats.straw);brim.position.set(0,0,0);top.position.set(0,.14,0);hats.straw.position.y=1.76;
-  const hair=new THREE.Mesh(new THREE.BoxGeometry(.54,.22,.54),M('#2D3436'));hair.position.y=1.72;g.add(hair);hats.hair=hair;
-  const crown=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.22,8),M('#FFD32A'));crown.position.y=1.88;g.add(crown);hats.crown=crown;
+  const capG=new THREE.Group();
+  capG.add(new THREE.Mesh(new THREE.SphereGeometry(.34,18,10,0,Math.PI*2,0,Math.PI/2.4),M('#D63031')));
+  const cbrim=new THREE.Mesh(new THREE.CylinderGeometry(.37,.37,.05,18),M('#D63031'));cbrim.position.y=.02;capG.add(cbrim);
+  capG.position.y=1.42;g.add(capG);hats.cap=capG;
+  const strawG=new THREE.Group();
+  strawG.add(new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.07,18),M('#E8C547')));
+  const stop=new THREE.Mesh(new THREE.CylinderGeometry(.26,.32,.24,14),M('#E8C547'));stop.position.y=.15;strawG.add(stop);
+  strawG.position.y=1.5;g.add(strawG);hats.straw=strawG;
+  const hair=new THREE.Mesh(new THREE.SphereGeometry(.42,18,12,0,Math.PI*2,0,Math.PI/2.2),M('#2D3436'));
+  hair.position.y=1.4;hair.scale.set(1,.8,1);g.add(hair);hats.hair=hair;
+  const crown=new THREE.Mesh(new THREE.CylinderGeometry(.2,.24,.24,8),M('#FFD32A'));
+  crown.position.y=1.66;g.add(crown);hats.crown=crown;
   const tag=makeNameSprite(look.name||'我');g.add(tag);
-  g.userData={legL,legR,bod,hed,hats,tag};
+  g.userData={bod,mats,earG,tailG,hats,tag};
   applyLook(g,look);return g;
 }
+function buildEars(earG,mats,look){
+  while(earG.children.length)earG.remove(earG.children[0]);
+  const id=look.ears||'none';if(id==='none')return;
+  const B=mats.body,P=mats.pink;
+  if(id==='cat'){[-1,1].forEach(s=>{
+    const o=new THREE.Mesh(new THREE.ConeGeometry(.13,.3,12),B);o.position.set(s*.27,1.64,0);o.rotation.z=-s*.25;earG.add(o);
+    const i=new THREE.Mesh(new THREE.ConeGeometry(.06,.15,10),P);i.position.set(s*.27,1.62,-.07);i.rotation.z=-s*.25;earG.add(i);});
+  }else if(id==='bunny'){[-1,1].forEach(s=>{
+    const o=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.3,6,12),B);o.position.set(s*.17,1.9,0);o.rotation.z=-s*.15;earG.add(o);
+    const i=new THREE.Mesh(new THREE.CapsuleGeometry(.045,.15,4,8),P);i.position.set(s*.17,1.88,-.06);i.rotation.z=-s*.15;earG.add(i);});
+  }else if(id==='bear'){[-1,1].forEach(s=>{
+    const o=new THREE.Mesh(new THREE.SphereGeometry(.15,14,10),B);o.position.set(s*.33,1.58,0);earG.add(o);
+    const i=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),P);i.position.set(s*.33,1.58,-.1);earG.add(i);});
+  }
+}
+function buildTail(tailG,mats,look){
+  while(tailG.children.length)tailG.remove(tailG.children[0]);
+  if((look.tail||'round')==='none')return;
+  const t=new THREE.Mesh(new THREE.SphereGeometry(.15,14,10),mats.belly);
+  t.position.set(0,.72,.46);tailG.add(t);
+}
 function applyLook(g,look){
-  const u=g.userData;u.legL.material.color.set(look.pants);u.legR.material.color.set(look.pants);
-  u.bod.material.color.set(look.shirt);u.hed.material.color.set(look.skin);
-  for(const k in u.hats){const h=u.hats[k];if(k==='straw'){h.visible=(look.hat==='straw');}else h.visible=(look.hat===k);}
+  const u=g.userData;
+  u.mats.body.color.set(look.shirt||'#F6C945');
+  u.mats.belly.color.set(shade(look.shirt||'#F6C945',.55));
+  u.mats.skin.color.set(look.skin||'#FFD9B3');
+  u.mats.feet.color.set(look.pants||'#E67E22');
+  buildEars(u.earG,u.mats,look);
+  buildTail(u.tailG,u.mats,look);
+  for(const k in u.hats)u.hats[k].visible=(look.hat===k);
   if(u.tag){g.remove(u.tag);if(u.tag.material.map)u.tag.material.map.dispose();u.tag.material.dispose();}
   u.tag=makeNameSprite(look.name||'我');g.add(u.tag);
 }
 const player=buildAvatar(S.look);
 scene.add(player);
-// ---------- NET 联机 P2P (Trystero, no server needed) ----------
-const remotePlayers=new Map();let NETOn=false,netRoom=null,netSendPos=null,netSendBuild=null,netSendChat=null,netSendHello=null;
-const buildLog=[];let netTick=0;const myId=Math.random().toString(36).slice(2,8);
-function lookArr(){return [S.look.name||'我',S.look.skin,S.look.shirt,S.look.pants,S.look.hat];}
+// ---------- NET 联机 P2P (Trystero, no server needed) + 房间大厅 + 房主 ----------
+// 房主规则:谁第一个创建房间谁就是房主 👑 fángzhǔ owner,存在本机 + 广播给全房,掉线自动传给最早的人
+const remotePlayers=new Map();let NETOn=false,netRoom=null,netSendPos=null,netSendBuild=null,netSendChat=null,netSendHello=null,netSendInfo=null;
+const buildLog=[];let netTick=0;
+function myPid(){try{let id=localStorage.getItem('ww_pid');if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem('ww_pid',id);}return id;}catch(e){return 'anon';}}
+const MY_PID=myPid();
+let curRoomCode=null,curOwner=null; // curOwner={id,name,createdAt}
+function myRooms(){try{return JSON.parse(localStorage.getItem('ww_myrooms')||'{}');}catch(e){return {};}}
+function saveMyRoom(code){try{const m=myRooms();if(!m[code])m[code]={createdAt:Date.now(),name:S.look.name||'我'};else m[code].name=S.look.name||m[code].name||'我';localStorage.setItem('ww_myrooms',JSON.stringify(m));}catch(e){}}
+function lookArr(){return [S.look.name||'我',S.look.skin,S.look.shirt,S.look.pants,S.look.hat,MY_PID,S.look.ears||'cat',S.look.tail||'round'];}
 function logBuild(e){buildLog.push(e);if(buildLog.length>200)buildLog.shift();if(NETOn&&netSendBuild)netSendBuild(e);}
-function toLook(a){a=a||[];return {name:a[0]||'朋友',skin:a[1]||'#FFD9B3',shirt:a[2]||'#E74C3C',pants:a[3]||'#2C3E50',hat:a[4]||'none'};}
+function toLook(a){a=a||[];return {name:a[0]||'朋友',skin:a[1]||'#FFD9B3',shirt:a[2]||'#F6C945',pants:a[3]||'#E67E22',hat:a[4]||'none',pid:a[5]||'',ears:a[6]||'cat',tail:a[7]||'round'};}
+function isOwnerPid(pid){return curOwner&&pid===curOwner.id;}
+function refreshOwnerTags(){
+  // 本地头顶名:房主加 👑
+  const want=(curOwner&&curOwner.id===MY_PID)?('👑 '+(S.look.name||'我')):(S.look.name||'我');
+  try{
+    const u=player.userData;if(u.tag){player.remove(u.tag);}
+    u.tag=makeNameSprite(want);player.add(u.tag);
+  }catch(e){}
+  for(const r of remotePlayers.values()){
+    try{
+      const rn=isOwnerPid(r.look.pid)?('👑 '+(r.look.name||'朋友')):(r.look.name||'朋友');
+      const g=r.g;if(g.userData.tag)g.remove(g.userData.tag);
+      g.userData.tag=makeNameSprite(rn);g.add(g.userData.tag);
+    }catch(e){}
+  }
+}
 function ensureRemote(id,arr){
   const nl=toLook(arr);
   let r=remotePlayers.get(id);
-  if(!r){const g=buildAvatar(nl);scene.add(g);r={g,tx:0,ty:0,tz:0,tyaw:0,look:nl};remotePlayers.set(id,r);updatePeerUI();}
-  else if(JSON.stringify(nl)!==JSON.stringify(r.look)){r.look=nl;applyLook(r.g,nl);}
+  if(!r){const g=buildAvatar(nl);scene.add(g);g.userData.tag&&g.remove(g.userData.tag);g.userData.tag=makeNameSprite(isOwnerPid(nl.pid)?('👑 '+nl.name):nl.name);g.add(g.userData.tag);r={g,tx:0,ty:0,tz:0,tyaw:0,look:nl};remotePlayers.set(id,r);updatePeerUI();}
+  else if(JSON.stringify(nl)!==JSON.stringify(r.look)){r.look=nl;applyLook(r.g,nl);const g=r.g;g.remove(g.userData.tag);g.userData.tag=makeNameSprite(isOwnerPid(nl.pid)?('👑 '+nl.name):nl.name);g.add(g.userData.tag);updatePeerUI();}
   return r;
 }
 function updatePeerUI(){
   const n=remotePlayers.size;const pc=$('peerCount');if(pc)pc.textContent=n;
-  const pl=$('netPeerList');if(pl)pl.innerHTML=n?[...remotePlayers.values()].map(r=>`<span class="peerchip">${r.look.name||'朋友'}</span>`).join(''):'暂无 zànwú · nobody yet';
+  const pl=$('netPeerList');if(pl)pl.innerHTML=n?[...remotePlayers.entries()].map(([id,r])=>`<span class="peerchip${isOwnerPid(r.look.pid)?' owner':''}">${isOwnerPid(r.look.pid)?'👑 ':''}${r.look.name||'朋友'}</span>`).join(''):'暂无 zànwú · nobody yet';
+  const co=$('curOwnerLine');
+  if(co){
+    if(!NETOn||!curRoomCode)co.textContent='👑 房主 fángzhǔ · Owner: —（先进入一个房间）';
+    else{const mine=curOwner&&curOwner.id===MY_PID;co.innerHTML=`👑 房主 fángzhǔ · Owner: <b>${curOwner?curOwner.name:'?'}</b>${mine?' <span class="ownerbadge">👑 就是你 shì nǐ · YOU!</span>':''} · 房间 ${curRoomCode}`;}
+  }
+  const pill=$('net-pill');if(pill)pill.classList.toggle('is-owner',!!(NETOn&&curOwner&&curOwner.id===MY_PID));
+}
+function broadcastInfo(){if(NETOn&&netSendInfo&&curOwner){try{netSendInfo([curOwner.id,curOwner.name,curOwner.createdAt]);}catch(e){}}}
+function adoptOwner(id,name,createdAt){
+  if(!curOwner||createdAt<curOwner.createdAt||(createdAt===curOwner.createdAt&&id<curOwner.id)){
+    curOwner={id,name,createdAt};updatePeerUI();refreshOwnerTags();announceNow();
+  }
 }
 function chatAdd(who,txt){
   const log=$('chatLog');if(!log)return;const d=document.createElement('div');d.className='chatmsg';d.innerHTML=`<b>${who}</b>：${txt}`;log.prepend(d);
@@ -334,26 +479,116 @@ function chatAdd(who,txt){
 }
 async function netJoin(code){
   const status=$('netStatus');
+  if(NETOn&&curRoomCode===code){toast('已经在这个房间了 · already here!');return;}
+  if(NETOn)netLeave(true);
   try{
     status.textContent='连接中 liánjiē zhōng · connecting…（最多等10秒）';
     const mod=await import('https://cdn.jsdelivr.net/npm/@trystero-p2p/torrent@0.26.0/+esm');
+    // 房主认定:我建过的房间沿用最早的 createdAt,否则现在就是我创建
+    const mine=myRooms();const now=Date.now();
+    const createdAt=mine[code]?mine[code].createdAt:now;
+    curRoomCode=code;curOwner={id:MY_PID,name:S.look.name||'我',createdAt};saveMyRoom(code);
     netRoom=mod.joinRoom({appId:'wordworld-cihui-3d-v1'},'ww-'+code);
     const aPos=netRoom.makeAction('pos',{onMessage:(data,ctx)=>{const r=ensureRemote(ctx.peerId,data.slice(4));r.tx=data[0];r.ty=data[1];r.tz=data[2];r.tyaw=data[3];}});
     const aBuild=netRoom.makeAction('build',{onMessage:(data)=>{const e=data;if(e.a==='add'){addBlock(e.x,e.y,e.z,e.t);}else{removeBlock(key(e.x,e.y,e.z));}}});
-    const aChat=netRoom.makeAction('chat',{onMessage:(data,ctx)=>{chatAdd(data[0],data[1]);toast(`💬 ${data[0]}：${data[1]}`);}});
+    const aChat=netRoom.makeAction('chat',{onMessage:(data)=>{chatAdd(data[0],data[1]);toast(`💬 ${data[0]}：${data[1]}`);}});
     const aHello=netRoom.makeAction('hello',{onMessage:(data,ctx)=>{ensureRemote(ctx.peerId,data);}});
+    const aInfo=netRoom.makeAction('info',{onMessage:(data)=>{adoptOwner(data[0],data[1],data[2]);}});
     netSendPos=d=>{try{aPos.send(d).catch(()=>{});}catch(e){}};
     netSendBuild=(d,target)=>{try{aBuild.send(d,target?{target}:undefined).catch(()=>{});}catch(e){}};
     netSendChat=d=>{try{aChat.send(d).catch(()=>{});}catch(e){}};
     netSendHello=(d,target)=>{try{aHello.send(d,target?{target}:undefined).catch(()=>{});}catch(e){}};
-    netRoom.onPeerJoin=id=>{updatePeerUI();netSendHello(lookArr(),id);for(const e of buildLog)netSendBuild(e,id);toast('👋 有朋友加入 yǒu péngyou · a friend joined!');};
-    netRoom.onPeerLeave=id=>{const r=remotePlayers.get(id);if(r){scene.remove(r.g);remotePlayers.delete(id);}updatePeerUI();toast('👋 朋友离开了 · friend left');};
-    NETOn=true;updatePeerUI();
+    netSendInfo=d=>{try{aInfo.send(d).catch(()=>{});}catch(e){}};
+    netRoom.onPeerJoin=id=>{updatePeerUI();netSendHello(lookArr(),id);netSendInfo([curOwner.id,curOwner.name,curOwner.createdAt],id);for(const e of buildLog)netSendBuild(e,id);announceNow();toast('👋 有朋友加入 yǒu péngyou · a friend joined!');};
+    netRoom.onPeerLeave=id=>{
+      const r=remotePlayers.get(id);
+      const leftPid=r?r.look.pid:'';
+      if(r){scene.remove(r.g);remotePlayers.delete(id);}
+      // 房主掉线 → 剩的人里 pid 最小的自动接任,保证永远有房主
+      if(curOwner&&leftPid&&leftPid===curOwner.id){
+        const cands=[{id:MY_PID,name:S.look.name||'我'}];
+        for(const rr of remotePlayers.values())cands.push({id:rr.look.pid,name:rr.look.name});
+        cands.sort((a,b)=>a.id<b.id?-1:1);
+        const win=cands[0];
+        curOwner={id:win.id,name:win.name,createdAt:Date.now()};
+        broadcastInfo();toast('👑 房主换人了 · new owner: '+win.name);
+      }
+      updatePeerUI();refreshOwnerTags();announceNow();toast('👋 朋友离开了 · friend left');
+    };
+    NETOn=true;updatePeerUI();refreshOwnerTags();
     status.textContent='已连接 yǐ liánjiē · connected! 房间 '+code+' — 走近一点就能互相看见';
-    netSendHello(lookArr());toast('🌐 联机成功！告诉朋友输入同一个房间号 · tell friends the code!');
-  }catch(e){NETOn=false;status.textContent='连接失败 shībài · failed（需要能上网才可联机，单人照常玩）';toast('🌐 联机失败：需要网络 · need internet for online');}
+    netSendHello(lookArr());broadcastInfo();announceNow();renderRoomDir();
+    toast('🌐 联机成功！告诉朋友输入同一个房间号 · tell friends the code!');
+  }catch(e){NETOn=false;curRoomCode=null;curOwner=null;status.textContent='连接失败 shībài · failed（需要能上网才可联机，单人照常玩）';toast('🌐 联机失败：需要网络 · need internet for online');}
+  updatePeerUI();
 }
-function netLeave(){NETOn=false;try{if(netRoom)netRoom.leave();}catch(e){}netRoom=null;netSendPos=netSendBuild=netSendChat=netSendHello=null;for(const r of remotePlayers.values())scene.remove(r.g);remotePlayers.clear();updatePeerUI();const s=$('netStatus');if(s)s.textContent='未连接 wèi liánjiē · offline（单人模式正常玩）';toast('已离开联机 · left online');}
+function netLeave(silent){
+  const wasCode=curRoomCode;
+  NETOn=false;curRoomCode=null;curOwner=null;
+  try{if(netRoom)netRoom.leave();}catch(e){}netRoom=null;netSendPos=netSendBuild=netSendChat=netSendHello=netSendInfo=null;
+  for(const r of remotePlayers.values())scene.remove(r.g);remotePlayers.clear();updatePeerUI();
+  try{const u=player.userData;player.remove(u.tag);u.tag=makeNameSprite(S.look.name||'我');player.add(u.tag);}catch(e){}
+  const s=$('netStatus');if(s)s.textContent='未连接 wèi liánjiē · offline（单人模式正常玩）';
+  if(!silent)toast('已离开联机 · left '+((wasCode||''))+' room');announceNow();renderRoomDir();
+}
+// ---------- LOBBY 大厅:所有人广播自己的房间,互相发现 ----------
+let lobbyRoom=null,lobbySendAnn=null,lobbySendAsk=null,lobbyOn=false;
+const lobbyRooms=new Map(); // code -> {code,ownerId,ownerName,members,createdAt,updatedAt}
+async function ensureLobby(){
+  if(lobbyOn&&lobbyRoom)return true;
+  try{
+    const mod=await import('https://cdn.jsdelivr.net/npm/@trystero-p2p/torrent@0.26.0/+esm');
+    lobbyRoom=mod.joinRoom({appId:'wordworld-cihui-3d-v1'},'ww-lobby');
+    const aAnn=lobbyRoom.makeAction('roomAnn',{onMessage:(d)=>{if(!d||!d.code)return;const prev=lobbyRooms.get(d.code);if(!prev||d.createdAt<=prev.createdAt||Date.now()-(prev.updatedAt||0)>5000){lobbyRooms.set(d.code,{...d,updatedAt:Date.now()});}else{prev.members=Math.max(prev.members,d.members);prev.updatedAt=Date.now();}renderRoomDir();}});
+    const aAsk=lobbyRoom.makeAction('roomAsk',{onMessage:()=>{announceNow();}});
+    lobbySendAnn=d=>{try{aAnn.send(d).catch(()=>{});}catch(e){}};
+    lobbySendAsk=()=>{try{aAsk.send({ask:1}).catch(()=>{});}catch(e){}};
+    lobbyRoom.onPeerJoin=()=>{announceNow();};
+    lobbyOn=true;
+    const ls=$('lobbyStatus');if(ls)ls.textContent='✅ 大厅在线 dàtīng zàixiàn · lobby online — 下面是大家创建的房间,点进入就能玩!';
+    announceNow();lobbySendAsk();
+    return true;
+  }catch(e){const ls=$('lobbyStatus');if(ls)ls.textContent='⚠️ 大厅连不上 · lobby offline（需要网络，单人照常玩）';return false;}
+}
+function announceNow(){
+  try{
+    if(lobbyOn&&lobbySendAnn&&NETOn&&curRoomCode&&curOwner){
+      lobbySendAnn({code:curRoomCode,ownerId:curOwner.id,ownerName:curOwner.name,members:remotePlayers.size+1,createdAt:curOwner.createdAt});
+      lobbyRooms.set(curRoomCode,{code:curRoomCode,ownerId:curOwner.id,ownerName:curOwner.name,members:remotePlayers.size+1,createdAt:curOwner.createdAt,updatedAt:Date.now()});
+      renderRoomDir();
+    }
+  }catch(e){}
+}
+setInterval(()=>{
+  try{
+    const now=Date.now();let changed=false;
+    for(const [k,v] of [...lobbyRooms]){if(now-(v.updatedAt||0)>35000&&!(NETOn&&k===curRoomCode)){lobbyRooms.delete(k);changed=true;}}
+    if(changed)renderRoomDir();
+    if(lobbyOn)announceNow();
+  }catch(e){}
+},6000);
+function renderRoomDir(){
+  const box=$('roomDirList');if(!box)return;
+  const mine=myRooms();
+  const live=[...lobbyRooms.values()].sort((a,b)=>b.members-a.members||b.updatedAt-a.updatedAt);
+  if(!live.length&&!Object.keys(mine).length){box.innerHTML=`<div class="card"><div class="grow">🌵 还没有房间… 第一个创建房间，你就是房主！<br><small>nǐ jiāng shì fángzhǔ · you'll be the owner!</small></div></div>`;return;}
+  let html='';
+  if(live.length)html+=`<div class="pyline">🔥 正在玩 zàiwán · LIVE (${live.length}) — 点 <b>进入 Join</b> 直接进!</div>`;
+  for(const r of live){
+    const isMine=r.ownerId===MY_PID,isCur=NETOn&&curRoomCode===r.code;
+    html+=`<div class="roomcard${isCur?' current':isMine?' mine':''}"><div class="rcode">🏠 ${r.code} ${isCur?'<span class="livebadge">● 在这里 HERE</span>':'<span class="livebadge">● LIVE '+r.members+'人</span>'} ${isMine?'<span class="minebadge">我的 MY</span>':''}</div><div class="rowline"><span class="ownerbadge">👑 房主 fángzhǔ · ${r.ownerName}</span><span style="font-size:12px;color:#888">建于 ${new Date(r.createdAt).toLocaleDateString()}</span></div><div class="rowline"><button class="mbtn" data-join="${r.code}"${isCur?' disabled':''}>${isCur?'已在房间 · Here!':'▶ 进入 Join'}</button></div></div>`;
+  }
+  const offlineMine=Object.keys(mine).filter(c=>!lobbyRooms.has(c));
+  if(offlineMine.length){
+    html+=`<div class="pyline">💾 我建过的 wǒ jiàn guo · MY ROOMS (${offlineMine.length}) — 进去即重当房主!</div>`;
+    for(const c of offlineMine){
+      const isCur=NETOn&&curRoomCode===c;
+      html+=`<div class="roomcard mine"><div class="rcode">🏠 ${c} <span class="minebadge">我的 MY</span></div><div class="rowline"><span class="ownerbadge">👑 房主 fángzhǔ · ${mine[c].name||S.look.name}</span><span style="font-size:12px;color:#888">💤 没人在线 · offline</span></div><div class="rowline"><button class="mbtn" data-join="${c}"${isCur?' disabled':''}>${isCur?'已在房间 · Here!':'▶ 进入当房主 Be owner'}</button></div></div>`;
+    }
+  }
+  box.innerHTML=html;
+  box.querySelectorAll('[data-join]').forEach(b=>b.onclick=()=>{const code=b.dataset.join;$('netRoom').value=code;netJoin(code);});
+}
 let px=(typeof window._sx==='number'?window._sx:0),pz=(typeof window._sz==='number'?window._sz:6),py=FLAT_Y+1.5,vy=0,grounded=true;
 streamWorld(true);py=topY(px,pz)+1.5;
 let yaw=0.6,pitch=0.5,dist=11;
@@ -513,30 +748,50 @@ $('btnHelp').onclick=()=>$('help').style.display='flex';
 $('startPlay').onclick=()=>{$('help').style.display='none';speak('欢迎来到词汇世界! Welcome to Word World!');};
 $('btnSound').onclick=e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'🔊':'🔇';};
 $('btnSave').onclick=()=>{save();toast('💾 已保存 yǐ bǎocún · Saved!');};
-// ---------- LOOK 角色打扮 ----------
+// ---------- LOOK 角色打扮 + 明星预设库 ----------
+function sameOutfit(a,b){return a.skin===b.skin&&a.shirt===b.shirt&&a.pants===b.pants&&a.hat===b.hat&&(a.ears||'cat')===(b.ears||'cat')&&(a.tail||'round')===(b.tail||'round');}
+function broadcastLook(){if(NETOn&&netSendHello)netSendHello(lookArr());}
+function applyPreset(p){
+  S.look.skin=p.look.skin;S.look.shirt=p.look.shirt;S.look.pants=p.look.pants;
+  S.look.hat=p.look.hat;S.look.ears=p.look.ears;S.look.tail=p.look.tail;
+  applyLook(player,S.look);refreshOwnerTags();save();renderLook();broadcastLook();
+  speak(p.zh);toast(`${p.e} 变身 biànshēn ${p.zh} ${p.py} · ${p.en}!`);
+}
 function renderLook(){
   $('lookName').value=S.look.name||'';
-  const mk=(el,arr,cur,fn)=>{const box=$(el);box.innerHTML='';for(const c of arr){const d=document.createElement('div');d.className='sw'+(c===cur?' sel':'');d.style.background=c;d.onclick=()=>{fn(c);renderLook();};box.appendChild(d);}};
-  mk('swSkin',SKINS,S.look.skin,c=>{S.look.skin=c;applyLook(player,S.look);save();});
-  mk('swShirt',SHIRTS,S.look.shirt,c=>{S.look.shirt=c;applyLook(player,S.look);save();});
-  mk('swPants',PANTS,S.look.pants,c=>{S.look.pants=c;applyLook(player,S.look);save();});
+  const pg=$('lookPresets');pg.innerHTML='';
+  for(const p of LOOKS){
+    const d=document.createElement('div');
+    d.className='preset'+(sameOutfit(S.look,p.look)?' sel':'');
+    d.innerHTML=`<div class="pe">${p.e}</div><div class="pn">${p.zh}</div><div class="pp">${p.en}</div>`;
+    d.title=`${p.py} · ${p.en}`;d.onclick=()=>applyPreset(p);pg.appendChild(d);
+  }
+  const mk=(el,arr,cur,fn)=>{const box=$(el);box.innerHTML='';for(const c of arr){const d=document.createElement('div');d.className='sw'+(c===cur?' sel':'');d.style.background=c;d.onclick=()=>{fn(c);broadcastLook();renderLook();};box.appendChild(d);}};
+  mk('swSkin',SKINS,S.look.skin,c=>{S.look.skin=c;applyLook(player,S.look);refreshOwnerTags();save();});
+  mk('swShirt',SHIRTS,S.look.shirt,c=>{S.look.shirt=c;applyLook(player,S.look);refreshOwnerTags();save();});
+  mk('swPants',PANTS,S.look.pants,c=>{S.look.pants=c;applyLook(player,S.look);refreshOwnerTags();save();});
   const hr=$('hatRow');hr.innerHTML='';
-  for(const h of HATS){const b=document.createElement('button');b.className='mbtn'+(S.look.hat===h.id?'':' ghost');b.style.margin='2px';b.textContent=`${h.e}${h.zh}`;b.title=`${h.py}·${h.id}`;b.onclick=()=>{S.look.hat=h.id;applyLook(player,S.look);save();renderLook();if(NETOn&&netSendHello)netSendHello(lookArr());};hr.appendChild(b);}
+  for(const h of HATS){const b=document.createElement('button');b.className='mbtn'+(S.look.hat===h.id?'':' ghost');b.style.margin='2px';b.textContent=`${h.e}${h.zh}`;b.title=`${h.py}·${h.id}`;b.onclick=()=>{S.look.hat=h.id;applyLook(player,S.look);refreshOwnerTags();save();renderLook();broadcastLook();};hr.appendChild(b);}
+  const er=$('earRow');er.innerHTML='';
+  for(const h of EARS){const b=document.createElement('button');b.className='mbtn'+((S.look.ears||'cat')===h.id?'':' ghost');b.style.margin='2px';b.textContent=`${h.e}${h.zh}`;b.title=`${h.py}·${h.id}`;b.onclick=()=>{S.look.ears=h.id;applyLook(player,S.look);refreshOwnerTags();save();renderLook();broadcastLook();};er.appendChild(b);}
+  const tr=$('tailRow');tr.innerHTML='';
+  for(const h of TAILS){const b=document.createElement('button');b.className='mbtn'+((S.look.tail||'round')===h.id?'':' ghost');b.style.margin='2px';b.textContent=`${h.e}${h.zh}`;b.title=`${h.py}·${h.id}`;b.onclick=()=>{S.look.tail=h.id;applyLook(player,S.look);refreshOwnerTags();save();renderLook();broadcastLook();};tr.appendChild(b);}
 }
-$('lookName').addEventListener('change',e=>{S.look.name=(e.target.value||'我').slice(0,10);applyLook(player,S.look);save();if(NETOn&&netSendHello)netSendHello(lookArr());toast(`我是 ${S.look.name}！· I'm ${S.look.name}!`);});
+$('lookName').addEventListener('change',e=>{S.look.name=(e.target.value||'我').slice(0,10);applyLook(player,S.look);save();if(curOwner&&curOwner.id===MY_PID){curOwner.name=S.look.name;broadcastInfo();}try{const m=myRooms();for(const k in m)m[k].name=S.look.name;localStorage.setItem('ww_myrooms',JSON.stringify(m));}catch(_){}refreshOwnerTags();if(NETOn&&netSendHello)netSendHello(lookArr());announceNow();renderRoomDir();toast(`我是 ${S.look.name}！· I'm ${S.look.name}!`);});
 $('btnLook').onclick=()=>{renderLook();openModal('mLook');};
 $('lookClose').onclick=closeModals;
 // ---------- NET 联机 ----------
 const CHATS=['你好 nǐ hǎo · Hi!','来看我的房子 kàn fángzi · See my house!','一起盖房子 yìqǐ gài · Build together!','去答题赚方块 qù dátí · Go earn blocks!','太棒了 tài bàng le · Awesome!','拜拜 báibái · Bye!'];
 $('chatRow').innerHTML='';
 for(const c of CHATS){const b=document.createElement('button');b.className='chatbtn';b.textContent=c.split(' ')[0]+' '+c.split(' ')[1];b.onclick=()=>{chatAdd(S.look.name||'我',c);if(NETOn&&netSendChat)netSendChat([S.look.name||'我',c]);else toast('先进入联机房间再聊天 · join a room first');};$('chatRow').appendChild(b);}
-$('btnNet').onclick=()=>{updatePeerUI();openModal('mNet');};
+$('btnNet').onclick=()=>{updatePeerUI();renderRoomDir();openModal('mNet');ensureLobby();};
 $('netClose').onclick=closeModals;
-$('netJoin').onclick=()=>{const code=($('netRoom').value||'sanban').trim().toLowerCase().replace(/[^a-z0-9]/g,'')||'sanban';$('netRoom').value=code;closeModals();netJoin(code);};
+$('roomRefresh').onclick=()=>{renderRoomDir();ensureLobby().then(()=>{if(lobbySendAsk)lobbySendAsk();announceNow();toast('🔄 正在刷新房间… · refreshing!');});};
+$('netJoin').onclick=()=>{const code=($('netRoom').value||'sanban').trim().toLowerCase().replace(/[^a-z0-9]/g,'')||'sanban';$('netRoom').value=code;netJoin(code);};
 $('netLeave').onclick=()=>{netLeave();};
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 setInterval(save,15000);
-refresh();
+refresh();updatePeerUI();renderRoomDir();
 </script>
 </body>
 </html>
