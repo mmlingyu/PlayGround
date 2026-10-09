@@ -1,18 +1,33 @@
-# PlayGround
+# WordWorld 词汇世界
 
-<!-- omgithub:readme:start -->
-## 🚀 Build, play, and remix with OMGithub
+🧱 **英语 + 汉字拼音版我的世界** · English + Chinese & Pinyin Minecraft (3D, 手机/平板/电脑都能玩)
 
-**Created using [OMGithub.com](https://omgithub.com).**
+📝 **答题 dá tí** 学单词 → 答对收集方块到 🎒**背包** + ⭐星星 →
+🧱 **建造**自己的世界 → ⚒️**合成**高级材料 → 🛒**兑换**工具 →
+🎨 蛋仔式角色 + 8 个⭐明星预设 → 🌐 **联机**和朋友一起盖房子！
 
-[![OMGithub](https://img.shields.io/badge/OMGithub-Open%20project-orange?style=for-the-badge)](https://omgithub.com/mmlingyu/PlayGround)
-[![GitHub](https://img.shields.io/badge/GitHub-Source-181717?logo=github&style=for-the-badge)](https://github.com/mmlingyu/PlayGround)
+## ▶️ 运行
 
-- 🎮 [Open the project](https://omgithub.com/mmlingyu/PlayGround).
-- ✨ [Remix this project](https://omgithub.com/?remix=mmlingyu%2FPlayGround).
-- 💻 [Explore the source](https://github.com/mmlingyu/PlayGround).
-- 🛠️ [Check build runs](https://github.com/mmlingyu/PlayGround/actions).
-- 🐛 [Report an issue](https://github.com/mmlingyu/PlayGround/issues).
-- 👤 [Explore the creator's projects](https://omgithub.com/mmlingyu).
-- 🌍 [Create with OMGithub](https://omgithub.com).
-<!-- omgithub:readme:end -->
+```bash
+./start.sh
+# 然后打开 http://localhost:3000
+```
+
+直接用浏览器打开 `index.html` 也行（需联网加载 CDN；`vendor/three.module.js` 已随项目附带，3D 引擎本地可用）。
+
+## 🎮 玩法
+
+| 系统 | 说明 |
+|---|---|
+| 📝 答题 Quiz | 36 个单词，英↔中双向出题 + 朗读，答对得方块 + 星星，连击有加成 |
+| 🧱 建造 Build | 背包选方块点世界放置；⛏️挖掉/🧱建造一键切换，敲掉自动回收 |
+| ⚒️ 合成 Craft | 泥土→石头、木头→木板、石头+木头→砖块、沙子→玻璃… |
+| 🛒 兑换 Shop | 星星换铲子（加速）、镐子（双倍掉落）、锤子（一次铺 3×3） |
+| 🌍 无限平地 | 一直走世界一直长出来，没有边界；进度自动存本机 |
+| 🎨 角色 Avatar | 蛋形身 + 大眼睛 + 兽耳尾巴，8 个明星预设一键变身 |
+| 🌐 联机 Online | P2P 直连免服务器：房间大厅 + 👑房主高亮，一起盖房 + 快聊 |
+
+## 🕹️ 操作
+
+- 手机/平板：左摇杆走路，右半屏拖动转视角，双指缩放
+- 电脑：`WASD` 走路 + `Space` 跳 + 鼠标点世界建造/挖掘
